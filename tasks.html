@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drone Store - Project Tasks</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #233044;
+      background: #f3f6fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 20px;
+    }
+
+    main {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: #173b70;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+    }
+
+    header p {
+      max-width: 720px;
+      margin: 0;
+      color: #59677a;
+      line-height: 1.6;
+    }
+
+    .progress-card,
+    .task-card {
+      border: 1px solid #dfe6f0;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgb(34 55 80 / 5%);
+    }
+
+    .progress-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+    }
+
+    .progress-track {
+      height: 10px;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #e8edf5;
+    }
+
+    .progress-value {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: #23845b;
+      transition: width 180ms ease;
+    }
+
+    #progress-label {
+      min-width: 90px;
+      color: #3e4d61;
+      font-size: .9rem;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .task-card {
+      padding: 20px;
+    }
+
+    .task-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+    }
+
+    .task-checkbox {
+      width: 21px;
+      height: 21px;
+      flex: 0 0 21px;
+      margin: 2px 0 0;
+      accent-color: #23845b;
+      cursor: pointer;
+    }
+
+    .task-title {
+      margin: 0;
+      color: #173b70;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .task-number {
+      display: inline-block;
+      margin-right: 7px;
+      color: #718198;
+      font-size: .9rem;
+    }
+
+    .task-description {
+      margin: 8px 0 14px 34px;
+      color: #526176;
+      line-height: 1.55;
+    }
+
+    .task-meta {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 1.2fr);
+      gap: 14px 24px;
+      margin-left: 34px;
+    }
+
+    .task-meta h3 {
+      margin: 0 0 7px;
+      color: #34445a;
+      font-size: .82rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .task-meta p {
+      margin: 0;
+      color: #536176;
+      font-size: .92rem;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .folder-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .folder-list li {
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #edf3fa;
+      color: #31547e;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: .8rem;
+      overflow-wrap: anywhere;
+    }
+
+    .task-card.is-done {
+      border-color: #b8dfcb;
+      background: #fbfefc;
+    }
+
+    .task-card.is-done .task-title {
+      color: #527362;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 24px 14px;
+      }
+
+      .task-card {
+        padding: 16px;
+      }
+
+      .task-meta {
+        grid-template-columns: 1fr;
+        margin-left: 0;
+      }
+
+      .task-description {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Drone Store Project Tasks</h1>
+      <p>Work through these tasks in order, from setup fixes to launch preparation. Your checklist is shared with teammates through the project server and database, so open this page from the same hosted project on each computer.</p>
+    </header>
+
+    <section class="progress-card" aria-label="Task completion progress">
+      <div class="progress-track" role="progressbar" aria-label="Tasks completed" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+        <div class="progress-value"></div>
+      </div>
+      <span id="progress-label">0 of 8 done</span>
+    </section>
+    <p id="sync-status" role="status" aria-live="polite">Loading shared task progress...</p>
+
+    <section class="task-list" aria-label="Project task checklist">
+      <article class="task-card" data-task-id="project-setup">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-project-setup">
+          <label class="task-title" for="task-project-setup"><span class="task-number">1.</span>Fix project setup</label>
+        </div>
+        <p class="task-description">Fix the broken <code>create</code> and <code>edit</code> routes, consolidate database access, add versioned migrations and seed data, and set up basic tests.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>index.php</li><li>config/</li><li>controllers/</li>
+              <li>database/migrations/ (create)</li><li>tests/ (create)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>A fresh setup creates the schema and sample data, and every declared route loads without PHP warnings or fatal errors.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="product-catalog">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-product-catalog">
+          <label class="task-title" for="task-product-catalog"><span class="task-number">2.</span>Connect the product catalog</label>
+        </div>
+        <p class="task-description">Build product and category models, add admin management for products, categories, images, variants, and stock, and show database-backed catalog pages.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>model/</li><li>admin/models/</li><li>admin/controllers/</li>
+              <li>admin/views/</li><li>controllers/</li><li>views/</li><li>assets/</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>Admins can create, edit, publish, and archive products. Storefront pages display real product details, prices, variants, images, and availability.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="customer-accounts">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-customer-accounts">
+          <label class="task-title" for="task-customer-accounts"><span class="task-number">3.</span>Finish customer accounts</label>
+        </div>
+        <p class="task-description">Add server-side validation and CSRF protection; complete profile updates and password reset; enforce account status and access checks.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>controllers/</li><li>model/</li><li>views/</li><li>config/</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>Registration, login, reset, and profile updates persist correctly; invalid requests are rejected and account-only pages require authentication.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="cart-wishlist">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-cart-wishlist">
+          <label class="task-title" for="task-cart-wishlist"><span class="task-number">4.</span>Build cart and wishlist</label>
+        </div>
+        <p class="task-description">Implement add, update, and remove actions. Support guest carts and merging them after sign-in. Persist wishlists for customers.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>controllers/</li><li>model/</li><li>views/</li><li>tests/ (create)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>Cart and wishlist contents persist across visits; the server verifies prices and stock instead of trusting browser values.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="checkout-orders">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-checkout-orders">
+          <label class="task-title" for="task-checkout-orders"><span class="task-number">5.</span>Implement checkout and order creation</label>
+        </div>
+        <p class="task-description">Validate shipping details, calculate discounts and totals on the server, and create orders and order items transactionally. Decide whether checkout requires an account or supports guest orders.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>controllers/</li><li>model/</li><li>views/</li>
+              <li>config/</li><li>database/migrations/ (create)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>A valid checkout creates a complete order with correct totals; failures leave no partial order or incorrect stock change. Resolve guest-checkout requirements because the current address schema requires a user ID.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="payments-fulfillment">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-payments-fulfillment">
+          <label class="task-title" for="task-payments-fulfillment"><span class="task-number">6.</span>Add payments and fulfillment</label>
+        </div>
+        <p class="task-description">Implement the first agreed payment method, then add a payment provider, order status transitions, tracking updates, and customer notifications.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>controllers/</li><li>model/</li><li>views/</li>
+              <li>admin/controllers/</li><li>admin/views/</li><li>tests/ (create)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>Payments are verified server-side. Validated status changes and tracking history are visible to admins and customers.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="admin-operations">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-admin-operations">
+          <label class="task-title" for="task-admin-operations"><span class="task-number">7.</span>Complete admin operations</label>
+        </div>
+        <p class="task-description">Replace template demo data with real orders and inventory. Add customer, order, and support-message management.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>admin/controllers/</li><li>admin/models/</li>
+              <li>admin/views/</li><li>model/</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>Admins can handle daily store operations; role checks protect every action and dashboard metrics reflect real data.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="task-card" data-task-id="launch-readiness">
+        <div class="task-heading">
+          <input class="task-checkbox" type="checkbox" id="task-launch-readiness">
+          <label class="task-title" for="task-launch-readiness"><span class="task-number">8.</span>Prepare for launch</label>
+        </div>
+        <p class="task-description">Add end-to-end tests, production configuration, backups, logs, monitoring, privacy and terms review, security checks, and deployment instructions.</p>
+        <div class="task-meta">
+          <div>
+            <h3>Folders and files</h3>
+            <ul class="folder-list">
+              <li>config/</li><li>README.md</li><li>tests/ (create)</li>
+              <li>database/migrations/ (create)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Done when</h3>
+            <p>Staging passes the end-to-end purchase flow, secrets stay outside source control, and deployment, backup, restore, and rollback steps are documented.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const progressEndpoint = "tasks-progress.php";
+      const cards = Array.from(document.querySelectorAll("[data-task-id]"));
+      const progressTrack = document.querySelector(".progress-track");
+      const progressValue = document.querySelector(".progress-value");
+      const progressLabel = document.getElementById("progress-label");
+      const syncStatus = document.getElementById("sync-status");
+
+      const updateProgress = () => {
+        const completedCount = cards.filter((card) => card.querySelector("input").checked).length;
+        const percentage = cards.length ? (completedCount / cards.length) * 100 : 0;
+        progressValue.style.width = `${percentage}%`;
+        progressTrack.setAttribute("aria-valuenow", completedCount);
+        progressLabel.textContent = `${completedCount} of ${cards.length} done`;
+      };
+
+      const requestProgress = async (method, body) => {
+        const response = await fetch(progressEndpoint, {
+          method,
+          headers: method === "POST" ? { "Content-Type": "application/json" } : {},
+          body: body ? JSON.stringify(body) : undefined,
+          credentials: "same-origin",
+          cache: "no-store"
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Unable to sync task progress.");
+        }
+
+        return result;
+      };
+
+      cards.forEach((card) => {
+        const checkbox = card.querySelector("input");
+        checkbox.disabled = true;
+
+        checkbox.addEventListener("change", async () => {
+          const completed = checkbox.checked;
+          checkbox.disabled = true;
+          card.classList.toggle("is-done", checkbox.checked);
+
+          try {
+            await requestProgress("POST", {
+              taskId: card.dataset.taskId,
+              completed
+            });
+            syncStatus.textContent = "Progress saved to the shared project database.";
+          } catch {
+            checkbox.checked = !completed;
+            card.classList.toggle("is-done", checkbox.checked);
+            syncStatus.textContent = "Could not save shared progress. Check the server connection and try again.";
+          } finally {
+            checkbox.disabled = false;
+            updateProgress();
+          }
+        });
+      });
+
+      const loadProgress = async () => {
+        try {
+          const result = await requestProgress("GET");
+          const completedTasks = new Set(result.completedTasks);
+
+          cards.forEach((card) => {
+            const checkbox = card.querySelector("input");
+            checkbox.checked = completedTasks.has(card.dataset.taskId);
+            checkbox.disabled = false;
+            card.classList.toggle("is-done", checkbox.checked);
+          });
+          syncStatus.textContent = "Shared progress loaded from the project database.";
+        } catch {
+          cards.forEach((card) => {
+            card.querySelector("input").disabled = false;
+          });
+          syncStatus.textContent = "Could not load shared progress. Open this page through the project server and check the database connection.";
+        }
+
+        updateProgress();
+      };
+
+      updateProgress();
+      loadProgress();
+    })();
+  </script>
+</body>
+</html>

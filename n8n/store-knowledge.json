@@ -1,0 +1,122 @@
+{
+  "store": {
+    "name": "Drophut",
+    "type": "Online drone and accessories store",
+    "currency": "USD",
+    "website_language": "English",
+    "customer_pages": {
+      "products": "?route=products",
+      "product_details": "?route=product-details&id={product_id}",
+      "cart": "?route=cart",
+      "checkout": "?route=checkout",
+      "account_and_order_history": "?route=my-account",
+      "order_tracking": "?route=tracking",
+      "contact": "?route=contact",
+      "faq": "?route=faq"
+    }
+  },
+  "customer_service_instructions": [
+    "Answer only with facts in this file or facts returned by an approved live store lookup.",
+    "Do not invent delivery estimates, service areas, return or refund rules, warranty coverage, contact details, or product specifications.",
+    "If the answer is not available, say that the store has not provided that information and direct the customer to the Contact page.",
+    "Never ask a customer to send their password, full payment details, or another customer's private information.",
+    "Order records and tracking lookups are private. Do not reveal order details unless the customer has been authenticated through a trusted store workflow."
+  ],
+  "faqs": [
+    {
+      "id": "products",
+      "question": "What do you sell?",
+      "answer": "Drophut sells drones and accessories. Browse the current catalog on the Products page.",
+      "keywords": ["products", "drones", "accessories", "catalog", "shop"]
+    },
+    {
+      "id": "product-price-and-stock",
+      "question": "How can I check a product's price or availability?",
+      "answer": "Prices and stock can change. Check the current product listing or product details page for the latest price and availability.",
+      "keywords": ["price", "cost", "stock", "availability", "in stock", "discount"]
+    },
+    {
+      "id": "product-information",
+      "question": "Where can I find product details?",
+      "answer": "Open the product's details page in the catalog. Product descriptions and specifications are shown there when provided.",
+      "keywords": ["specifications", "specs", "description", "features", "product details"]
+    },
+    {
+      "id": "account",
+      "question": "Do I need an account to order?",
+      "answer": "Yes. You need to sign in or create a customer account before checkout.",
+      "keywords": ["account", "register", "sign in", "checkout", "order"]
+    },
+    {
+      "id": "payment",
+      "question": "What payment methods are accepted?",
+      "answer": "Cash on delivery is the only payment method currently available at checkout. Online card and PayPal payments are not connected.",
+      "keywords": ["payment", "pay", "cash", "cash on delivery", "COD", "card", "PayPal"]
+    },
+    {
+      "id": "shipping-cost",
+      "question": "How much is shipping?",
+      "answer": "The current checkout calculates shipping as $0.00. Confirm the order total shown at checkout before placing your order.",
+      "keywords": ["shipping cost", "shipping fee", "delivery fee", "shipping"]
+    },
+    {
+      "id": "delivery-time-and-area",
+      "question": "How long does delivery take, and where do you deliver?",
+      "answer": "Delivery times and delivery areas have not been specified. Please contact the store through the Contact page before ordering if you need this information.",
+      "keywords": ["delivery time", "when will", "shipping time", "delivery area", "international", "where do you ship"]
+    },
+    {
+      "id": "place-order",
+      "question": "How do I place an order?",
+      "answer": "Add available products to your cart, sign in or create an account, enter your shipping details at checkout, and select cash on delivery.",
+      "keywords": ["place order", "buy", "purchase", "checkout", "cart"]
+    },
+    {
+      "id": "order-tracking",
+      "question": "How can I track my order?",
+      "answer": "Sign in to your account and use the tracking number shown in your order list on the Order Tracking page. The tracking page only shows orders belonging to the signed-in account. Tracking updates may not be available yet.",
+      "keywords": ["track", "tracking", "order status", "where is my order", "tracking number"]
+    },
+    {
+      "id": "returns-and-refunds",
+      "question": "What is your return or refund policy?",
+      "answer": "A return or refund policy has not been specified in the store information available to this assistant. Please contact the store through the Contact page before promising or arranging a return or refund.",
+      "keywords": ["return", "refund", "exchange", "cancel"]
+    },
+    {
+      "id": "warranty",
+      "question": "Do products include a warranty?",
+      "answer": "Warranty coverage has not been specified. Check the product information or contact the store before purchase.",
+      "keywords": ["warranty", "guarantee", "repair", "broken", "defective"]
+    },
+    {
+      "id": "password-reset",
+      "question": "Can I reset my password by email?",
+      "answer": "Automated password-reset email delivery is not configured. Please use the Contact page for help accessing your account.",
+      "keywords": ["forgot password", "reset password", "can't sign in", "account access"]
+    },
+    {
+      "id": "contact",
+      "question": "How can I contact the store?",
+      "answer": "Use the Contact page on the website. Do not provide an email address or phone number unless it has been confirmed from a current, trusted store source.",
+      "keywords": ["contact", "support", "help", "email", "phone"]
+    }
+  ],
+  "live_data_requirements": {
+    "product_questions": {
+      "data": ["product name", "description", "current price", "current stock"],
+      "instruction": "Look up current product data in the store database or website. Do not treat cached prices or stock as current."
+    },
+    "order_questions": {
+      "data": ["order status", "payment status", "tracking history"],
+      "instruction": "Only look up orders after verifying the customer through a trusted authenticated workflow. Match the order to that customer's account; never rely on a tracking code alone."
+    }
+  },
+  "not_confirmed_by_store": [
+    "Delivery estimates and shipping destinations",
+    "Returns, exchanges, cancellations, and refund policy",
+    "Warranty coverage",
+    "Customer support email address and phone number",
+    "Product specifications not present in the current product record"
+  ]
+}
