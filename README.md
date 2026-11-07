@@ -1,5 +1,6 @@
 # Drophut Drone Store
 
+
 A procedural PHP and MySQL e-commerce project for a drone shop. The customer flow supports product browsing, accounts, carts, wishlists, cash-on-delivery orders, and order tracking. The admin area provides account access and product management.
 
 ## Features
@@ -21,7 +22,7 @@ The blog and informational pages use the existing theme content and are not data
 
 ## Requirements
 
-- PHP 7.4 or later
+
 - MySQL or MariaDB, with InnoDB support
 - PHP `mysqli` extension and `mysqlnd` (for `mysqli_stmt_get_result`)
 - Apache (for example, Laragon, XAMPP, or WAMP) or PHP's built-in development server
