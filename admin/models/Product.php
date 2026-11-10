@@ -1,10 +1,16 @@
 <?php
 
-require_once __DIR__ . '/../../config/DbClasses.php';
+require_once __DIR__ . '/../../config/db.php';
 
 function product_model_connection()
 {
-    return db_connect();
+    global $con;
+    return $con;
+}
+
+function product_model_escape($value)
+{
+    return mysqli_real_escape_string(product_model_connection(), (string) $value);
 }
 
 function product_model_all()
@@ -13,140 +19,172 @@ function product_model_all()
         product_model_connection(),
         'SELECT p.id, p.productName, p.sku, p.product_category, p.price, p.stock, p.Description, '
         . '(SELECT image_url FROM product_images WHERE product_id = p.id '
-        . 'ORDER BY is_primary DESC, sort_order ASC, id ASC LIMIT 1) AS image_url '
+        . 'ORDER BY is_primary DESC, id ASC LIMIT 1) AS image_url '
         . 'FROM products p ORDER BY p.id DESC'
     );
+
+    if (!$result) {
+        error_log('Unable to load admin products: ' . mysqli_error(product_model_connection()));
+        return false;
+    }
 
     return mysqli_fetch_all($result, MYSQLI_ASSOC);
 }
 
 function product_model_find_by_id($id)
 {
-    $stmt = mysqli_prepare(
+    $id = (int) $id;
+    $result = mysqli_query(
         product_model_connection(),
         'SELECT p.id, p.productName, p.sku, p.product_category, p.price, p.stock, p.Description, '
         . '(SELECT image_url FROM product_images WHERE product_id = p.id '
-        . 'ORDER BY is_primary DESC, sort_order ASC, id ASC LIMIT 1) AS image_url '
-        . 'FROM products p WHERE p.id = ? LIMIT 1'
+        . 'ORDER BY is_primary DESC, id ASC LIMIT 1) AS image_url '
+        . "FROM products p WHERE p.id = $id LIMIT 1"
     );
-    mysqli_stmt_bind_param($stmt, 'i', $id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $product = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
 
-    return $product ?: false;
+    if (!$result) {
+        error_log('Unable to find admin product: ' . mysqli_error(product_model_connection()));
+        return null;
+    }
+
+    return mysqli_fetch_assoc($result) ?: false;
+}
+
+function product_model_image_urls($id)
+{
+    $id = (int) $id;
+    $result = mysqli_query(
+        product_model_connection(),
+        "SELECT image_url FROM product_images WHERE product_id = $id ORDER BY is_primary DESC, id ASC"
+    );
+
+    if (!$result) {
+        error_log('Unable to load product images: ' . mysqli_error(product_model_connection()));
+        return null;
+    }
+
+    return array_column(mysqli_fetch_all($result, MYSQLI_ASSOC), 'image_url');
 }
 
 function product_model_create($product, $imageUrl = null)
 {
     $connection = product_model_connection();
-    mysqli_begin_transaction($connection);
+    $name = product_model_escape($product['productName']);
+    $sku = product_model_escape($product['sku']);
+    $category = product_model_escape($product['product_category']);
+    $description = product_model_escape($product['Description']);
+    $price = product_model_escape($product['price']);
+    $stock = (int) $product['stock'];
 
-    try {
-        $stmt = mysqli_prepare(
-            $connection,
-            'INSERT INTO products (productName, sku, product_category, stock, Description, price) VALUES (?, ?, ?, ?, ?, ?)'
-        );
-
-        $stock = (int) $product['stock'];
-        $price = (int) $product['price'];
-        mysqli_stmt_bind_param(
-            $stmt,
-            'sssisi',
-            $product['productName'],
-            $product['sku'],
-            $product['product_category'],
-            $stock,
-            $product['Description'],
-            $price
-        );
-        mysqli_stmt_execute($stmt);
-        $productId = (int) mysqli_insert_id($connection);
-        mysqli_stmt_close($stmt);
-
-        if ($imageUrl !== null) {
-            product_model_insert_image($connection, $productId, $imageUrl, $product['productName']);
-        }
-
-        mysqli_commit($connection);
-        return $productId;
-    } catch (Throwable $exception) {
-        mysqli_rollback($connection);
-        throw $exception;
+    if (!mysqli_begin_transaction($connection)) {
+        error_log('Unable to start product creation transaction: ' . mysqli_error($connection));
+        return false;
     }
+
+    $created = mysqli_query(
+        $connection,
+        "INSERT INTO products (productName, sku, product_category, stock, Description, price)
+         VALUES ('$name', '$sku', '$category', $stock, '$description', '$price')"
+    );
+    if (!$created) {
+        error_log('Unable to create product: ' . mysqli_error($connection));
+        mysqli_rollback($connection);
+        return false;
+    }
+
+    $productId = (int) mysqli_insert_id($connection);
+    if ($imageUrl !== null && !product_model_insert_image($connection, $productId, $imageUrl)) {
+        mysqli_rollback($connection);
+        return false;
+    }
+
+    if (!mysqli_commit($connection)) {
+        error_log('Unable to commit product creation: ' . mysqli_error($connection));
+        mysqli_rollback($connection);
+        return false;
+    }
+
+    return $productId;
 }
 
 function product_model_update($id, $product, $imageUrl = null)
 {
     $connection = product_model_connection();
-    mysqli_begin_transaction($connection);
+    $id = (int) $id;
+    $name = product_model_escape($product['productName']);
+    $sku = product_model_escape($product['sku']);
+    $category = product_model_escape($product['product_category']);
+    $description = product_model_escape($product['Description']);
+    $price = product_model_escape($product['price']);
+    $stock = (int) $product['stock'];
 
-    try {
-        $stmt = mysqli_prepare(
-            $connection,
-            'UPDATE products SET productName = ?, sku = ?, product_category = ?, stock = ?, Description = ?, price = ? WHERE id = ?'
-        );
-
-        $stock = (int) $product['stock'];
-        $price = (int) $product['price'];
-        mysqli_stmt_bind_param(
-            $stmt,
-            'sssisii',
-            $product['productName'],
-            $product['sku'],
-            $product['product_category'],
-            $stock,
-            $product['Description'],
-            $price,
-            $id
-        );
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
-
-        if ($imageUrl !== null) {
-            $stmt = mysqli_prepare(
-                $connection,
-                'UPDATE product_images SET image_url = ?, alt_text = ?, is_primary = 1 '
-                . 'WHERE product_id = ? AND is_primary = 1 ORDER BY id ASC LIMIT 1'
-            );
-            mysqli_stmt_bind_param($stmt, 'ssi', $imageUrl, $product['productName'], $id);
-            mysqli_stmt_execute($stmt);
-            $imageUpdated = mysqli_stmt_affected_rows($stmt) > 0;
-            mysqli_stmt_close($stmt);
-
-            if (!$imageUpdated) {
-                product_model_insert_image($connection, $id, $imageUrl, $product['productName']);
-            }
-        }
-
-        mysqli_commit($connection);
-        return true;
-    } catch (Throwable $exception) {
-        mysqli_rollback($connection);
-        throw $exception;
+    if (!mysqli_begin_transaction($connection)) {
+        error_log('Unable to start product update transaction: ' . mysqli_error($connection));
+        return false;
     }
+
+    $updated = mysqli_query(
+        $connection,
+        "UPDATE products
+         SET productName = '$name', sku = '$sku', product_category = '$category',
+             stock = $stock, Description = '$description', price = '$price'
+         WHERE id = $id"
+    );
+    if (!$updated) {
+        error_log('Unable to update product: ' . mysqli_error($connection));
+        mysqli_rollback($connection);
+        return false;
+    }
+
+    if ($imageUrl !== null) {
+        $removedImages = mysqli_query(
+            $connection,
+            "DELETE FROM product_images WHERE product_id = $id"
+        );
+        if (!$removedImages || !product_model_insert_image($connection, $id, $imageUrl)) {
+            mysqli_rollback($connection);
+            return false;
+        }
+    }
+
+    if (!mysqli_commit($connection)) {
+        error_log('Unable to commit product update: ' . mysqli_error($connection));
+        mysqli_rollback($connection);
+        return false;
+    }
+
+    return true;
 }
 
 function product_model_delete($id)
 {
-    $stmt = mysqli_prepare(product_model_connection(), 'DELETE FROM products WHERE id = ?');
-    mysqli_stmt_bind_param($stmt, 'i', $id);
-    mysqli_stmt_execute($stmt);
-    $deleted = mysqli_stmt_affected_rows($stmt) > 0;
-    mysqli_stmt_close($stmt);
+    $id = (int) $id;
+    $result = mysqli_query(
+        product_model_connection(),
+        "DELETE FROM products WHERE id = $id"
+    );
 
-    return $deleted;
+    if (!$result) {
+        error_log('Unable to delete product: ' . mysqli_error(product_model_connection()));
+        return null;
+    }
+
+    return mysqli_affected_rows(product_model_connection()) > 0;
 }
 
-function product_model_insert_image($connection, $productId, $imageUrl, $altText)
+function product_model_insert_image($connection, $productId, $imageUrl)
 {
-    $stmt = mysqli_prepare(
+    $productId = (int) $productId;
+    $imageUrl = mysqli_real_escape_string($connection, (string) $imageUrl);
+    $result = mysqli_query(
         $connection,
-        'INSERT INTO product_images (product_id, image_url, alt_text, is_primary, sort_order) '
-        . 'VALUES (?, ?, ?, 1, 0)'
+        "INSERT INTO product_images (product_id, image_url, is_primary)
+         VALUES ($productId, '$imageUrl', 1)"
     );
-    mysqli_stmt_bind_param($stmt, 'iss', $productId, $imageUrl, $altText);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
+
+    if (!$result) {
+        error_log('Unable to save product image: ' . mysqli_error($connection));
+    }
+
+    return (bool) $result;
 }

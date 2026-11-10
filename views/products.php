@@ -1,106 +1,75 @@
 <?php
-require_once __DIR__ . '/../config/storefront_db.php';
-
-$products = array();
-$pageError = '';
-try {
-    $products = storefront_rows(storefront_execute(
-        storefront_db(),
-        'SELECT p.id, p.productName, p.short_description, p.product_category, p.price, p.discount_price, '
-        . 'COALESCE(p.stock, p.stock_quantity, 0) AS stock_quantity, '
-        . '(SELECT image_url FROM product_images WHERE product_id = p.id '
-        . 'ORDER BY is_primary DESC, sort_order ASC, id ASC LIMIT 1) AS image_url '
-        . 'FROM products p ORDER BY p.created_at DESC, p.id DESC'
-    ));
-} catch (Throwable $exception) {
-    error_log('Product listing failed.');
-    $pageError = 'Products are temporarily unavailable. Please try again later.';
-}
-$flash = storefront_take_flash();
+$productsResult = productAll($con);
+$productsLoadError = !$productsResult;
+include_once __DIR__ . '/../inc/header.php';
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Products | Drophut</title>
-    <link rel="stylesheet" href="assets/css/plugins.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
-</head>
-<body>
-<?php require __DIR__ . '/../inc/header.php'; ?>
-<section class="products-page">
+
+<div class="breadcrumbs_area">
     <div class="container">
-        <div class="row">
-            <div class="col text-center">
-                <div class="section-title">
-                    <h2>All Products</h2>
-                </div>
-                <p class="products-page-intro">Browse our available drones and accessories.</p>
-                <!-- <a class="button products-cart-link" href="?route=cart">View Cart</a> -->
-            </div>
-        </div>
-        <?php if ($flash): ?>
-            <div class="row">
-                <div class="col-12 products-page-message">
-                    <p role="<?php echo $flash['kind'] === 'error' ? 'alert' : 'status'; ?>">
-                        <?php echo storefront_escape($flash['message']); ?>
-                    </p>
-                </div>
-            </div>
-        <?php endif; ?>
-        <?php if ($pageError !== ''): ?>
-            <div class="products-page-empty" role="alert"><?php echo storefront_escape($pageError); ?></div>
-        <?php elseif (!$products): ?>
-            <div class="products-page-empty">No products are available right now.</div>
-        <?php else: ?>
-            <div class="row products-grid">
-                <?php foreach ($products as $product): ?>
-                    <?php
-                    $price = storefront_product_price($product);
-                    $regularPrice = isset($product['price']) ? (float) $product['price'] : 0;
-                    $stock = (int) $product['stock_quantity'];
-                    ?>
-                    <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12 products-grid-column">
-                        <article class="single-tranding products-page-card">
-                            <a href="?route=product-details&amp;id=<?php echo (int) $product['id']; ?>">
-                                <div class="tranding-pro-img">
-                                    <img src="<?php echo storefront_escape(storefront_image_url($product['image_url'])); ?>"
-                                         alt="<?php echo storefront_escape($product['productName'] ?: 'Drone'); ?>">
-                                </div>
-                                <div class="tranding-pro-title">
-                                    <h3><?php echo storefront_escape($product['productName'] ?: 'Drone'); ?></h3>
-                                    <h4><?php echo storefront_escape($product['product_category'] ?: 'Drone'); ?></h4>
-                                </div>
-                                <div class="tranding-pro-price">
-                                    <div class="price_box">
-                                        <span class="current_price">$<?php echo number_format($price, 2); ?></span>
-                                        <?php if ($regularPrice > $price): ?>
-                                            <span class="old_price">$<?php echo number_format($regularPrice, 2); ?></span>
-                                        <?php endif; ?>
+        <div class="row"><div class="col-12"><div class="breadcrumb_content">
+            <ul><li><a href="?route=home">Home</a></li><li>Products</li></ul>
+        </div></div></div>
+    </div>
+</div>
+
+<section class="pt-60 pb-60">
+    <div class="container">
+        <div class="row"><div class="col-12">
+            <div class="section-title text-center"><h2>Our Products</h2></div>
+            <?php if (!empty($_SESSION['error'])): ?>
+                <p class="alert alert-danger"><?= escapeHtml($_SESSION['error']) ?></p>
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
+            <?php if (!empty($_SESSION['success'])): ?>
+                <p class="alert alert-success"><?= escapeHtml($_SESSION['success']) ?></p>
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+            <?php if ($productsLoadError): ?>
+                <p>Products are temporarily unavailable. Please try again later.</p>
+            <?php elseif (mysqli_num_rows($productsResult) === 0): ?>
+                <p>No products are available right now.</p>
+            <?php else: ?>
+                <div class="row justify-content-center">
+                    <?php while ($product = mysqli_fetch_assoc($productsResult)): ?>
+                        <div class="col-xl-4 col-lg-4 col-md-6 col-sm-6 col-12">
+                            <article class="single-tranding mb-30">
+                                <a href="?route=product-details&amp;id=<?= (int) $product['id'] ?>">
+                                    <div class="tranding-pro-img">
+                                        <img src="<?= escapeHtml(productImageUrl($product['image_url'])) ?>"
+                                             alt="<?= escapeHtml($product['name']) ?>">
                                     </div>
-                                </div>
-                            </a>
-                            <p class="products-stock <?php echo $stock > 0 ? 'is-available' : 'is-unavailable'; ?>">
-                                <?php echo $stock > 0 ? $stock . ' in stock' : 'Out of stock'; ?>
-                            </p>
-                            <?php if ($stock > 0): ?>
-                                <form class="products-add-form" action="?route=cart-action" method="post">
-                                    <input type="hidden" name="csrf_token" value="<?php echo storefront_escape(storefront_csrf_token()); ?>">
-                                    <input type="hidden" name="action" value="add">
-                                    <input type="hidden" name="product_id" value="<?php echo (int) $product['id']; ?>">
-                                    <input type="hidden" name="quantity" value="1">
-                                    <button class="button" type="submit">Add to Cart</button>
+                                    <div class="tranding-pro-title">
+                                        <h3><?= escapeHtml($product['name']) ?></h3>
+                                    </div>
+                                    <div class="tranding-pro-price">
+                                        <div class="price_box">
+                                            <span class="current_price">$<?= number_format((float) $product['price'], 2) ?></span>
+                                        </div>
+                                    </div>
+                                </a>
+                                <p><?= (int) $product['stock'] > 0
+                                    ? 'In stock: ' . (int) $product['stock']
+                                    : 'Out of stock' ?></p>
+                                <?php if ((int) $product['stock'] > 0): ?>
+                                    <form action="?route=AddToCart" method="post">
+                                        <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
+                                        <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+                                        <input type="hidden" name="qty" value="1">
+                                        <button class="button" type="submit">Add to cart</button>
+                                    </form>
+                                <?php endif; ?>
+                                <form action="?route=AddToWishlist" method="post">
+                                    <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
+                                    <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
+                                    <button class="button" type="submit">Add to wishlist</button>
                                 </form>
-                            <?php endif; ?>
-                        </article>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                            </article>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            <?php endif; ?>
+        </div></div>
     </div>
 </section>
-<?php require __DIR__ . '/../inc/fotter.php'; ?>
-</body>
-</html>
+
+<?php include_once __DIR__ . '/../inc/footer.php'; ?>

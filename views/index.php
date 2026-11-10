@@ -1,31 +1,16 @@
-<!doctype html>
-<html class="no-js" lang="en">
-<!--   03:20:39 GMT -->
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Drophut - Single Product eCommerce Template</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.ico">
-    
-    <!-- CSS 
-    ========================= -->
-   
+<?php
+$homeProductsResult = productAll($con);
+$homeProducts = [];
+$homeProductsError = !$homeProductsResult;
 
-    <!-- Plugins CSS -->
-    <link rel="stylesheet" href="assets/css/plugins.css">
-    
-    <!-- Main Style CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
+if ($homeProductsResult) {
+    while ($homeProduct = mysqli_fetch_assoc($homeProductsResult)) {
+        $homeProducts[] = $homeProduct;
+    }
+}
 
-</head>
-
-<body>
-
-    <?php require __DIR__ . '/../inc/header.php'; ?>
+include_once __DIR__ . '/../inc/header.php';
+?>
 
 
     <!--slider area start-->
@@ -39,7 +24,7 @@
                                 <h1>Next level of Drone</h1>
                                 <h2>Insane Quality for use</h2>
                                 <p>Special offer <span> 20% off </span> this week</p>
-                                <a class="button" href="?route=product-details">Buy now</a>
+                                <a class="button" href="?route=products">Buy now</a>
                             </div>
                         </div>
                         <div class="col-xl-6 col-md-6">
@@ -59,7 +44,7 @@
                                 <h1>Best Camera Included</h1>
                                 <h2>100% Flexible</h2>
                                 <p>exclusive offer <span> 20% off </span> this week</p>
-                                <a class="button" href="?route=product-details">Shop now</a>
+                                <a class="button" href="?route=products">Shop now</a>
                             </div>
                         </div>                        
                         <div class="col-xl-6 col-md-6">
@@ -78,7 +63,7 @@
                                 <h1>With some gifts</h1>
                                 <h2>Special one for you</h2>
                                 <p>exclusive offer <span> 20% off </span> this week</p>
-                                <a class="button" href="?route=product-details">shopping now</a>
+                                <a class="button" href="?route=products">shopping now</a>
                             </div>
                         </div>                      
                         <div class="col-xl-6 col-md-6">
@@ -104,63 +89,33 @@
                 </div>
             </div>
             <div class="row justify-content-center">
-                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
-                    <div class="single-tranding">
-                        <a href="?route=product-details">
-                            <div class="tranding-pro-img">
-                                <img src="assets/img/product/tranding-1.jpg" alt="">
+                <?php if ($homeProductsError): ?>
+                    <p>Products are temporarily unavailable. Please try again later.</p>
+                <?php elseif (!$homeProducts): ?>
+                    <p>No products are available right now.</p>
+                <?php else: ?>
+                    <?php foreach ($homeProducts as $product): ?>
+                        <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
+                            <div class="single-tranding">
+                                <a href="?route=product-details&amp;id=<?= (int) $product['id'] ?>">
+                                    <div class="tranding-pro-img">
+                                        <img src="<?= escapeHtml(productImageUrl($product['image_url'])) ?>"
+                                             alt="<?= escapeHtml($product['name']) ?>">
+                                    </div>
+                                    <div class="tranding-pro-title">
+                                        <h3><?= escapeHtml($product['name']) ?></h3>
+                                        <h4><?= escapeHtml($product['product_category'] ?: 'Drone') ?></h4>
+                                    </div>
+                                    <div class="tranding-pro-price">
+                                        <div class="price_box">
+                                            <span class="current_price">$<?= number_format((float) $product['price'], 2) ?></span>
+                                        </div>
+                                    </div>
+                                </a>
                             </div>
-                            <div class="tranding-pro-title">
-                                <h3>Meyoji Robast Drone</h3>
-                                <h4>Drone</h4>
-                            </div>
-                            <div class="tranding-pro-price">
-                                <div class="price_box">
-                                    <span class="current_price">$70.00</span>
-                                    <span class="old_price">$80.00</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
-                    <div class="single-tranding">
-                        <a href="?route=product-details">
-                            <div class="tranding-pro-img">
-                                <img src="assets/img/product/tranding-2.jpg" alt="">
-                            </div>
-                            <div class="tranding-pro-title">
-                                <h3>Ut praesentium earum</h3>
-                                <h4>Mevrik</h4>
-                            </div>
-                            <div class="tranding-pro-price">
-                                <div class="price_box">
-                                    <span class="current_price">$70.00</span>
-                                    <span class="old_price">$80.00</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
-                    <div class="single-tranding">
-                        <a href="?route=product-details">
-                            <div class="tranding-pro-img">
-                                <img src="assets/img/product/tranding-3.jpg" alt="">
-                            </div>
-                            <div class="tranding-pro-title">
-                                <h3>Consectetur adipisicing</h3>
-                                <h4>Flyer</h4>
-                            </div>
-                            <div class="tranding-pro-price">
-                                <div class="price_box">
-                                    <span class="current_price">$70.00</span>
-                                    <span class="old_price">$80.00</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </section><!--Tranding product-->
@@ -204,183 +159,11 @@
         </div>
     </section><!--Features area-->
 
-    <!--Features area-->
-    <section class="gray-bg pt-60 pb-60">
-        <div class="container">
-            <div class="row">
-                <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 order-lg-1 order-md-1 order-sm-1">
-                    <div class="pro-details-feature">
-                        <img src="assets/img/product/1.png" alt="">
-                    </div>
-                </div>
-                <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 order-lg-2 order-md-2 order-sm-2">
-                    <div class="pro-details-feature">
-                        <h3>Long Lasting</h3>
-                        <p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
-                        <ul>
-                            <li>It is a long established fact that</li>
-                            <li>Many desktop publishing</li>
-                            <li>Various versions have evolved over the years, sometimes by accident</li>
-                            <li>There are many variations of passages</li>
-                            <li>If you are going to use a</li>
-                            <li>Alteration in some form, by injected</li>
-                        </ul>
-                        <a href="#">$70 Buy now</a>
-                    </div>
-                </div>
-                <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 order-lg-3 order-md-4 order-sm-4 order-4">
-                    <div class="pro-details-feature">
-                        <h3>Impressive Distance</h3>
-                        <p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text.</p>
-                        <ul>
-                            <li>It is a long established fact that</li>
-                            <li>Many desktop publishing</li>
-                            <li>Various versions have evolved over the years, sometimes by accident</li>
-                            <li>There are many variations of passages</li>
-                            <li>If you are going to use a</li>
-                            <li>Alteration in some form, by injected</li>
-                        </ul>
-                        <a href="#">$70 Buy now</a>
-                    </div>
-                </div>
-                <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12 order-lg-4 order-md-3 order-sm-3 order-3">
-                    <div class="pro-details-feature">
-                        <img src="assets/img/product/1.png" alt="">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section><!--Features area-->
-
+  
     
-    <!--product details start-->
-    <div class="product_details mt-60 mb-60">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-6 col-md-6">
-                    <div class="product-details-tab">
-                        <div id="img-1" class="zoomWrapper single-zoom">
-                            <a href="#">
-                                <img id="zoom1" src="assets/img/product/details-1.jpg" data-zoom-image="assets/img/product/details-1.jpg" alt="big-1">
-                            </a>
-                        </div>
-                        <div class="single-zoom-thumb">
-                            <ul class="s-tab-zoom owl-carousel single-product-active" id="gallery_01">
-                                <li>
-                                    <a href="#" class="elevatezoom-gallery active" data-update="" data-image="assets/img/product/details-2.jpg" data-zoom-image="assets/img/product/details-2.jpg">
-                                        <img src="assets/img/product/details-2.jpg" alt="zo-th-1"/>
-                                    </a>
-
-                                </li>
-                                <li >
-                                    <a href="#" class="elevatezoom-gallery active" data-update="" data-image="assets/img/product/details-3.jpg" data-zoom-image="assets/img/product/details-3.jpg">
-                                        <img src="assets/img/product/details-3.jpg" alt="zo-th-1"/>
-                                    </a>
-
-                                </li>
-                                <li >
-                                    <a href="#" class="elevatezoom-gallery active" data-update="" data-image="assets/img/product/details-4.jpg" data-zoom-image="assets/img/product/details-4.jpg">
-                                        <img src="assets/img/product/details-4.jpg" alt="zo-th-1"/>
-                                    </a>
-
-                                </li>
-                                <li >
-                                    <a href="#" class="elevatezoom-gallery active" data-update="" data-image="assets/img/product/details-1.jpg" data-zoom-image="assets/img/product/details-1.jpg">
-                                        <img src="assets/img/product/details-1.jpg" alt="zo-th-1"/>
-                                    </a>
-
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-6">
-                    <div class="product_d_right">
-                        <form action="#">
-                            
-                            <h1>Meyoji Robast Drone Fusce ultricies massa</h1>
-                            <div class=" product_ratting">
-                                <ul>
-                                    <li><a href="#"><i class="fa fa-star"></i></a></li>
-                                    <li><a href="#"><i class="fa fa-star"></i></a></li>
-                                    <li><a href="#"><i class="fa fa-star"></i></a></li>
-                                    <li><a href="#"><i class="fa fa-star"></i></a></li>
-                                    <li><a href="#"><i class="fa fa-star"></i></a></li>
-                                    <li class="review"><a href="#"> (250 reviews) </a></li>
-                                </ul>
-                                
-                            </div>
-                            <div class="price_box">
-                                <span class="current_price">$70.00</span>
-                                <span class="old_price">$80.00</span>                                
-                            </div>
-                            <div class="product_desc">
-                                <ul>
-                                    <li>In Stock</li>
-                                    <li>Free delivery available*</li>
-                                    <li>Sale 30% Off Use Code : 'Drophut'</li>
-                                </ul>
-                                <p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will</p>
-                            </div>
-                            <div class="product_timing">
-                                <div data-countdown="2021/6/28"></div>
-                            </div>
-                            <div class="product_variant color">
-                                <h3>Available Options</h3>
-                                <label>color</label>
-                                <ul>
-                                    <li class="color1"><a href="#"></a></li>
-                                    <li class="color2"><a href="#"></a></li>
-                                    <li class="color3"><a href="#"></a></li>
-                                    <li class="color4"><a href="#"></a></li>
-                                </ul>
-                            </div>
-                            <div class="product_variant quantity">
-                                <label>quantity</label>
-                                <input min="1" max="100" value="1" type="number">
-                                <button class="button" type="submit">Buy now</button>  
-                                
-                            </div>
-                            <div class="product_meta">
-                                <span>Category: <a href="#">Drone</a></span>
-                            </div>
-                            
-                        </form>
-                        <div class="priduct_social">
-                            <ul>
-                                <li><a class="facebook" href="#" title="facebook"><i class="fa fa-facebook"></i> Like</a></li>           
-                                <li><a class="twitter" href="#" title="twitter"><i class="fa fa-twitter"></i> tweet</a></li>           
-                                <li><a class="pinterest" href="#" title="pinterest"><i class="fa fa-pinterest"></i> save</a></li>           
-                                <li><a class="google-plus" href="#" title="google +"><i class="fa fa-google-plus"></i> share</a></li>        
-                                <li><a class="linkedin" href="#" title="linkedin"><i class="fa fa-linkedin"></i> linked</a></li>        
-                            </ul>      
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>    
-    </div>
-    <!--product details end-->
-
     
-    <!--area-->
-    <section class="pt-60 pb-60 gray-bg">
-        <div class="container">
-            <div class="row">
-                <div class="col text-center">
-                    <div class="section-title">
-                        <h2>Watch it now</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-xl-8 col-lg-8 col-md-12 col-sm-12 col-12">
-                    <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/136938394?color=FA5252&amp;title=0&amp;byline=0" style="position:absolute;top:0;left:0;width:100%;height:100%;" allow="autoplay; fullscreen" allowfullscreen></iframe></div><script src="../../../player.vimeo.com/api/player.js"></script>
-                </div>
-            </div>
-        </div>
-    </section><!--area-->
+                      
+
 
     
     <!--Other product-->
@@ -394,63 +177,33 @@
                 </div>
             </div>
             <div class="row justify-content-center">
-                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
-                    <div class="single-tranding mb-30">
-                        <a href="?route=product-details">
-                            <div class="tranding-pro-img">
-                                <img src="assets/img/product/tranding-1.jpg" alt="">
+                <?php if ($homeProductsError): ?>
+                    <p>Products are temporarily unavailable. Please try again later.</p>
+                <?php elseif (!$homeProducts): ?>
+                    <p>No products are available right now.</p>
+                <?php else: ?>
+                    <?php foreach ($homeProducts as $product): ?>
+                        <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
+                            <div class="single-tranding mb-30">
+                                <a href="?route=product-details&amp;id=<?= (int) $product['id'] ?>">
+                                    <div class="tranding-pro-img">
+                                        <img src="<?= escapeHtml(productImageUrl($product['image_url'])) ?>"
+                                             alt="<?= escapeHtml($product['name']) ?>">
+                                    </div>
+                                    <div class="tranding-pro-title">
+                                        <h3><?= escapeHtml($product['name']) ?></h3>
+                                        <h4><?= escapeHtml($product['product_category'] ?: 'Drone') ?></h4>
+                                    </div>
+                                    <div class="tranding-pro-price">
+                                        <div class="price_box">
+                                            <span class="current_price">$<?= number_format((float) $product['price'], 2) ?></span>
+                                        </div>
+                                    </div>
+                                </a>
                             </div>
-                            <div class="tranding-pro-title">
-                                <h3>Meyoji Robast Drone</h3>
-                                <h4>Drone</h4>
-                            </div>
-                            <div class="tranding-pro-price">
-                                <div class="price_box">
-                                    <span class="current_price">$70.00</span>
-                                    <span class="old_price">$80.00</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
-                    <div class="single-tranding mb-30">
-                        <a href="?route=product-details">
-                            <div class="tranding-pro-img">
-                                <img src="assets/img/product/tranding-2.jpg" alt="">
-                            </div>
-                            <div class="tranding-pro-title">
-                                <h3>Ut praesentium earum</h3>
-                                <h4>Mevrik</h4>
-                            </div>
-                            <div class="tranding-pro-price">
-                                <div class="price_box">
-                                    <span class="current_price">$70.00</span>
-                                    <span class="old_price">$80.00</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6 col-12">
-                    <div class="single-tranding mb-30">
-                        <a href="?route=product-details">
-                            <div class="tranding-pro-img">
-                                <img src="assets/img/product/tranding-3.jpg" alt="">
-                            </div>
-                            <div class="tranding-pro-title">
-                                <h3>Consectetur adipisicing</h3>
-                                <h4>Flyer</h4>
-                            </div>
-                            <div class="tranding-pro-price">
-                                <div class="price_box">
-                                    <span class="current_price">$70.00</span>
-                                    <span class="old_price">$80.00</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </section><!--Other product-->
@@ -640,4 +393,114 @@
     <!--shipping area end-->
 	
 	
-    <?php require __DIR__ . '/../inc/fotter.php'; ?>
+    <!--footer area start-->
+    <footer class="footer_widgets">
+        <div class="footer_top">
+            <div class="container">
+                <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="widgets_container contact_us">
+                        <div class="footer_logo">
+                            <a href="#"><img src="assets/img/logo/logo.png" alt=""></a>
+                        </div>
+                        <div class="footer_contact">
+                            <p>John draw real poor on call my from. May she mrs furnished discourse extremely. Ask doubt noisy shade guest Lose away off why half led have near bed. At engage simple father of period others except</p>
+                            <p>Ask doubt noisy shade guest Lose away off why half led have near bed. At engage simple father of period others except</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-sm-6">
+                    <div class="widgets_container widget_menu">
+                        <h3>Information</h3>
+                        <div class="footer_menu">
+                            <ul>
+                                <li><a href="?route=about">About Us</a></li>
+                                <li><a href="?route=blog">Delivery Information</a></li>
+                                <li><a href="?route=contact">Privacy Policy</a></li>
+                                <li><a href="?route=services">Terms & Conditions</a></li>
+                                <li><a href="#">Returns</a></li>
+                                <li><a href="#">Gift Certificates</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-sm-6">
+                    <div class="widgets_container widget_menu">
+                        <h3>My Account</h3>
+                        <div class="footer_menu">
+                            <ul>
+                                <li><a href="#">My Account</a></li>
+                                <li><a href="#">Order History</a></li>
+                                <li><a href="?route=wishlist">Wish List</a></li>
+                                <li><a href="#">Newsletter</a></li>
+                                <li><a href="#">Affiliate</a></li>
+                                <li><a href="?route=faq">International Orders</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="widgets_container newsletter">
+                        <h3>Follow Us</h3>
+                        <div class="footer_social_link">
+                            <ul>
+                                <li><a class="facebook" href="#" title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                                <li><a class="twitter" href="#" title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                                <li><a class="instagram" href="#" title="instagram"><i class="fa fa-instagram"></i></a></li>
+                                <li><a class="linkedin" href="#" title="linkedin"><i class="fa fa-linkedin"></i></a></li>
+                                <li><a class="rss" href="#" title="rss"><i class="fa fa-rss"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="subscribe_form">
+                            <h3>Join Our Newsletter Now</h3>
+                            <form id="mc-form" class="mc-form footer-newsletter" >
+                                <input id="mc-email" type="email" autocomplete="off" placeholder="Your email address..." />
+                                <button id="mc-submit">Subscribe!</button>
+                            </form>
+                            <!-- mailchimp-alerts Start -->
+                            <div class="mailchimp-alerts text-centre">
+                                <div class="mailchimp-submitting"></div><!-- mailchimp-submitting end -->
+                                <div class="mailchimp-success"></div><!-- mailchimp-success end -->
+                                <div class="mailchimp-error"></div><!-- mailchimp-error end -->
+                            </div><!-- mailchimp-alerts end -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="footer_bottom">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 col-md-6">
+                        <div class="copyright_area">
+                            <p> <a href="templateshub.net">Templates Hub</a></p>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6">
+                        <div class="footer_payment text-right">
+                            <a href="#"><img src="assets/img/icon/payment.png" alt=""></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>   
+    </footer>
+    <!--footer area end-->
+<!-- JS
+============================================ -->
+
+
+
+<!-- Plugins JS -->
+<script src="assets/js/plugins.js"></script>
+
+<!-- Main JS -->
+<script src="assets/js/main.js"></script>
+
+
+
+</body>
+
+<!--   03:22:07 GMT -->
+</html>

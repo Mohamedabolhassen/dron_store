@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../models/Admin.php';
 require_once __DIR__ . '/AdminAuthController.php';
+require_once __DIR__ . '/OrderController.php';
 require_once __DIR__ . '/ProductController.php';
 
 $adminRoutes = [
@@ -141,7 +142,7 @@ if ($isAdminAuthPage) {
 
     try {
         $adminRegistrationEnabled = !admin_has_accounts();
-    } catch (mysqli_sql_exception $exception) {
+    } catch (RuntimeException $exception) {
         error_log('Admin authentication database error: ' . $exception->getMessage());
         $adminRegistrationEnabled = false;
         $_SESSION['admin_auth_error'] = 'Admin authentication is not configured. Please contact the site administrator.';
@@ -171,6 +172,41 @@ $productActionRoutes = [
 
 if ($adminIsAuthenticated && empty($_SESSION['admin_csrf_token'])) {
     $_SESSION['admin_csrf_token'] = bin2hex(random_bytes(32));
+}
+
+if ($route === 'admin-order-action') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $csrfToken = $_SESSION['admin_csrf_token'] ?? '';
+    $submittedToken = $_POST['csrf_token'] ?? '';
+    if (!is_string($csrfToken) || !is_string($submittedToken) || !hash_equals($csrfToken, $submittedToken)) {
+        $_SESSION['order_message'] = [
+            'type' => 'danger',
+            'text' => 'Your session expired. Please try again.',
+        ];
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $result = admin_order_controller_update_status(
+        $_POST['order_id'] ?? null,
+        $_POST['order_action'] ?? null
+    );
+    $messages = [
+        'updated' => ['success', 'Order status updated.'],
+        'not_pending' => ['warning', 'This order has already been processed.'],
+        'not_found' => ['danger', 'The selected order was not found.'],
+        'invalid_order' => ['danger', 'Invalid order.'],
+        'invalid_action' => ['danger', 'Invalid order action.'],
+        'error' => ['danger', 'The order status could not be updated. Please try again.'],
+    ];
+    $message = $messages[$result] ?? ['danger', 'The order status could not be updated. Please try again.'];
+    $_SESSION['order_message'] = ['type' => $message[0], 'text' => $message[1]];
+    header('Location: ?route=admin');
+    exit;
 }
 
 if ($route === 'admin-profile-password') {
@@ -281,10 +317,14 @@ if ($route === 'admin-product-edit') {
     $actionError = '';
     try {
         $editingProduct = product_controller_find_by_id($_GET['id'] ?? null, $actionError);
-        if ($editingProduct === false) {
+        if ($editingProduct === false || $editingProduct === null) {
             $_SESSION['product_message'] = [
                 'type' => 'danger',
-                'text' => $actionError !== '' ? $actionError : 'The selected product was not found.',
+                'text' => $actionError !== ''
+                    ? $actionError
+                    : ($editingProduct === null
+                        ? 'The product could not be loaded. Please try again.'
+                        : 'The selected product was not found.'),
             ];
             header('Location: ?route=admin-forms-elements');
             exit;
@@ -316,7 +356,14 @@ $adminView = $adminRoutes[$route] ?? null;
 
 if ($adminView !== null && is_file(__DIR__ . '/../views/' . $adminView)) {
     if ($route === 'admin-users-profile') {
-        $adminProfile = admin_find_by_id($_SESSION['admin_id']);
+        try {
+            $adminProfile = admin_find_by_id($_SESSION['admin_id']);
+        } catch (RuntimeException $exception) {
+            error_log('Admin profile lookup failed: ' . $exception->getMessage());
+            http_response_code(500);
+            echo 'The admin profile could not be loaded.';
+            return;
+        }
         $adminPasswordMessage = $_SESSION['admin_password_message'] ?? null;
         unset($_SESSION['admin_password_message']);
 
@@ -334,10 +381,8 @@ if ($adminView !== null && is_file(__DIR__ . '/../views/' . $adminView)) {
     }
 
     if ($route === 'admin-forms-elements') {
-        try {
-            $products = product_controller_all();
-        } catch (Throwable $exception) {
-            error_log('Admin product list failed: ' . $exception->getMessage());
+        $products = product_controller_all();
+        if ($products === false) {
             http_response_code(500);
             echo 'The product list could not be loaded.';
             return;

@@ -29,11 +29,10 @@ function product_controller_create($input, &$error, $imageFile = null)
         return false;
     }
 
-    try {
-        product_model_create($product, $newImage);
-    } catch (Throwable $exception) {
+    if (!product_model_create($product, $newImage)) {
         product_controller_remove_image($newImage);
-        throw $exception;
+        $error = 'The product could not be saved. Check that the SKU is unique and try again.';
+        return false;
     }
 
     return true;
@@ -47,8 +46,17 @@ function product_controller_update($id, $input, &$error, $imageFile = null)
     }
 
     $existingProduct = product_model_find_by_id($id);
+    if ($existingProduct === null) {
+        $error = 'The product could not be loaded. Please try again.';
+        return false;
+    }
     if ($existingProduct === false) {
         $error = 'The selected product was not found.';
+        return false;
+    }
+    $existingImages = product_model_image_urls($id);
+    if ($existingImages === null) {
+        $error = 'The product images could not be loaded. Please try again.';
         return false;
     }
 
@@ -62,15 +70,16 @@ function product_controller_update($id, $input, &$error, $imageFile = null)
         return false;
     }
 
-    try {
-        product_model_update($id, $product, $newImage);
-    } catch (Throwable $exception) {
+    if (!product_model_update($id, $product, $newImage)) {
         product_controller_remove_image($newImage);
-        throw $exception;
+        $error = 'The product could not be updated. Check that the SKU is unique and try again.';
+        return false;
     }
 
-    if ($newImage !== null && !empty($existingProduct['image_url'])) {
-        product_controller_remove_image($existingProduct['image_url']);
+    if ($newImage !== null) {
+        foreach ($existingImages as $imageUrl) {
+            product_controller_remove_image($imageUrl);
+        }
     }
 
     return true;
@@ -84,13 +93,34 @@ function product_controller_delete($id, &$error)
     }
 
     $product = product_model_find_by_id($id);
-    if ($product === false || !product_model_delete($id)) {
+    if ($product === null) {
+        $error = 'The product could not be loaded. Please try again.';
+        return false;
+    }
+
+    if ($product === false) {
         $error = 'The selected product was not found.';
         return false;
     }
 
-    if (!empty($product['image_url'])) {
-        product_controller_remove_image($product['image_url']);
+    $imageUrls = product_model_image_urls($id);
+    if ($imageUrls === null) {
+        $error = 'The product images could not be loaded. Please try again.';
+        return false;
+    }
+
+    $deleted = product_model_delete($id);
+    if ($deleted === null) {
+        $error = 'The product could not be deleted. It may be included in an existing order.';
+        return false;
+    }
+    if (!$deleted) {
+        $error = 'The selected product was not found.';
+        return false;
+    }
+
+    foreach ($imageUrls as $imageUrl) {
+        product_controller_remove_image($imageUrl);
     }
 
     return true;
@@ -171,6 +201,11 @@ function product_controller_remove_image($imageUrl)
 
 function product_controller_validate_id($id, &$error)
 {
+    if (!is_scalar($id) || is_bool($id)) {
+        $error = 'Invalid product.';
+        return false;
+    }
+
     $validatedId = filter_var($id, FILTER_VALIDATE_INT);
     if ($validatedId === false || $validatedId < 1) {
         $error = 'Invalid product.';
@@ -182,6 +217,11 @@ function product_controller_validate_id($id, &$error)
 
 function product_controller_validate_product($input, &$error)
 {
+    if (!is_array($input)) {
+        $error = 'Please complete the product form.';
+        return false;
+    }
+
     $fields = ['productName', 'sku', 'product_category', 'stock', 'price'];
     foreach ($fields as $field) {
         if (!isset($input[$field]) || !is_string($input[$field])) {
@@ -206,10 +246,15 @@ function product_controller_validate_product($input, &$error)
         $product['productName'] === '' ||
         $product['sku'] === '' ||
         !in_array($product['product_category'], $allowedCategories, true) ||
+        strlen($product['product_category']) > 100 ||
         !ctype_digit($product['stock']) ||
-        !ctype_digit($product['price'])
+        (float) $product['stock'] > 4294967295 ||
+        !preg_match('/^\d{1,8}(\.\d{1,2})?$/', $product['price']) ||
+        strlen($product['productName']) > 255 ||
+        strlen($product['sku']) > 100 ||
+        (isset($input['Description']) && !is_string($input['Description']))
     ) {
-        $error = 'Enter a name, SKU, valid category, non-negative whole-number price, and whole-number stock.';
+        $error = 'Enter a name, SKU, valid category, non-negative price, and whole-number stock. Check the field lengths.';
         return false;
     }
 

@@ -1,10 +1,21 @@
 <?php
 
-require_once __DIR__ . '/../../config/DbClasses.php';
+require_once __DIR__ . '/../../config/db.php';
+
+function admin_db_connection()
+{
+    global $con;
+    return $con;
+}
 
 function admin_password_column()
 {
-    $result = mysqli_query(db_connect(), 'SHOW COLUMNS FROM admins');
+    $result = mysqli_query(admin_db_connection(), 'SHOW COLUMNS FROM admins');
+    if (!$result) {
+        error_log('Unable to inspect admin table: ' . mysqli_error(admin_db_connection()));
+        throw new RuntimeException('Admin authentication is not configured.');
+    }
+
     $columns = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $columns[] = $row['Field'];
@@ -23,22 +34,28 @@ function admin_password_column()
 
 function admin_has_accounts()
 {
-    $result = mysqli_query(db_connect(), 'SELECT id FROM admins LIMIT 1');
+    $result = mysqli_query(admin_db_connection(), 'SELECT id FROM admins LIMIT 1');
+    if (!$result) {
+        error_log('Unable to check admin accounts: ' . mysqli_error(admin_db_connection()));
+        throw new RuntimeException('Admin authentication is not configured.');
+    }
+
     return mysqli_fetch_assoc($result) !== null;
 }
 
 function admin_create_first_account($name, $email, $password)
 {
-    $connection = db_connect();
+    $connection = admin_db_connection();
     $lockName = 'dron_store_first_admin_registration';
-    $lock = mysqli_prepare($connection, 'SELECT GET_LOCK(?, 10)');
-    mysqli_stmt_bind_param($lock, 's', $lockName);
-    mysqli_stmt_execute($lock);
-    mysqli_stmt_bind_result($lock, $lockAcquired);
-    mysqli_stmt_fetch($lock);
-    mysqli_stmt_close($lock);
+    $escapedLockName = mysqli_real_escape_string($connection, $lockName);
+    $lockResult = mysqli_query($connection, "SELECT GET_LOCK('$escapedLockName', 10) AS acquired");
+    if (!$lockResult) {
+        error_log('Unable to acquire admin registration lock: ' . mysqli_error($connection));
+        throw new RuntimeException('Admin registration is temporarily unavailable.');
+    }
 
-    if ((int) $lockAcquired !== 1) {
+    $lock = mysqli_fetch_assoc($lockResult);
+    if (!$lock || (int) $lock['acquired'] !== 1) {
         throw new RuntimeException('Unable to acquire the admin registration lock.');
     }
 
@@ -48,84 +65,90 @@ function admin_create_first_account($name, $email, $password)
         }
 
         $passwordColumn = admin_password_column();
-        $statement = mysqli_prepare(
+        $name = mysqli_real_escape_string($connection, $name);
+        $email = mysqli_real_escape_string($connection, $email);
+        $passwordHash = mysqli_real_escape_string($connection, password_hash($password, PASSWORD_DEFAULT));
+        $created = mysqli_query(
             $connection,
-            'INSERT INTO admins (name, email, ' . $passwordColumn . ') VALUES (?, ?, ?)'
+            "INSERT INTO admins (name, email, $passwordColumn) VALUES ('$name', '$email', '$passwordHash')"
         );
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        mysqli_stmt_bind_param($statement, 'sss', $name, $email, $passwordHash);
-        mysqli_stmt_execute($statement);
-        mysqli_stmt_close($statement);
+        if (!$created) {
+            error_log('Unable to create admin account: ' . mysqli_error($connection));
+            throw new RuntimeException('Admin registration is temporarily unavailable.');
+        }
 
         return true;
     } finally {
-        $releaseLock = mysqli_prepare($connection, 'SELECT RELEASE_LOCK(?)');
-        mysqli_stmt_bind_param($releaseLock, 's', $lockName);
-        mysqli_stmt_execute($releaseLock);
-        mysqli_stmt_close($releaseLock);
+        if (!mysqli_query($connection, "SELECT RELEASE_LOCK('$escapedLockName')")) {
+            error_log('Unable to release admin registration lock: ' . mysqli_error($connection));
+        }
     }
 }
 
 function admin_find_by_email($email)
 {
+    $connection = admin_db_connection();
     $passwordColumn = admin_password_column();
-    $statement = mysqli_prepare(
-        db_connect(),
-        'SELECT id, name, email, ' . $passwordColumn . ' AS password_hash FROM admins WHERE email = ? LIMIT 1'
+    $email = mysqli_real_escape_string($connection, $email);
+    $result = mysqli_query(
+        $connection,
+        "SELECT id, name, email, $passwordColumn AS password_hash
+         FROM admins WHERE email = '$email' LIMIT 1"
     );
-    mysqli_stmt_bind_param($statement, 's', $email);
-    mysqli_stmt_execute($statement);
-    $result = mysqli_stmt_get_result($statement);
-    $admin = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($statement);
+    if (!$result) {
+        error_log('Unable to find admin account: ' . mysqli_error($connection));
+        throw new RuntimeException('Admin authentication is temporarily unavailable.');
+    }
 
-    return $admin ?: false;
+    return mysqli_fetch_assoc($result) ?: false;
 }
 
 function admin_find_by_id($id)
 {
-    $statement = mysqli_prepare(
-        db_connect(),
-        'SELECT id, name, email FROM admins WHERE id = ? LIMIT 1'
+    $id = (int) $id;
+    $result = mysqli_query(
+        admin_db_connection(),
+        "SELECT id, name, email FROM admins WHERE id = $id LIMIT 1"
     );
-    $adminId = (int) $id;
-    mysqli_stmt_bind_param($statement, 'i', $adminId);
-    mysqli_stmt_execute($statement);
-    $result = mysqli_stmt_get_result($statement);
-    $admin = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($statement);
+    if (!$result) {
+        error_log('Unable to load admin account: ' . mysqli_error(admin_db_connection()));
+        throw new RuntimeException('Admin account is temporarily unavailable.');
+    }
 
-    return $admin ?: false;
+    return mysqli_fetch_assoc($result) ?: false;
 }
 
 function admin_change_password($id, $currentPassword, $newPassword)
 {
-    $connection = db_connect();
+    $connection = admin_db_connection();
     $passwordColumn = admin_password_column();
     $adminId = (int) $id;
-    $statement = mysqli_prepare(
+    $result = mysqli_query(
         $connection,
-        'SELECT ' . $passwordColumn . ' AS password_hash FROM admins WHERE id = ? LIMIT 1'
+        "SELECT $passwordColumn AS password_hash FROM admins WHERE id = $adminId LIMIT 1"
     );
-    mysqli_stmt_bind_param($statement, 'i', $adminId);
-    mysqli_stmt_execute($statement);
-    $result = mysqli_stmt_get_result($statement);
-    $admin = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($statement);
+    if (!$result) {
+        error_log('Unable to load admin password: ' . mysqli_error($connection));
+        throw new RuntimeException('Admin password could not be changed.');
+    }
 
+    $admin = mysqli_fetch_assoc($result);
     if (!$admin || empty($admin['password_hash']) || !password_verify($currentPassword, $admin['password_hash'])) {
         return false;
     }
 
-    $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-    $statement = mysqli_prepare(
+    $passwordHash = mysqli_real_escape_string(
         $connection,
-        'UPDATE admins SET ' . $passwordColumn . ' = ? WHERE id = ?'
+        password_hash($newPassword, PASSWORD_DEFAULT)
     );
-    mysqli_stmt_bind_param($statement, 'si', $passwordHash, $adminId);
-    mysqli_stmt_execute($statement);
-    $changed = mysqli_stmt_affected_rows($statement) === 1;
-    mysqli_stmt_close($statement);
+    $updated = mysqli_query(
+        $connection,
+        "UPDATE admins SET $passwordColumn = '$passwordHash' WHERE id = $adminId"
+    );
+    if (!$updated) {
+        error_log('Unable to update admin password: ' . mysqli_error($connection));
+        throw new RuntimeException('Admin password could not be changed.');
+    }
 
-    return $changed;
+    return mysqli_affected_rows($connection) === 1;
 }

@@ -1,24 +1,54 @@
-<!--header area start-->
-<script type="module">
-    import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+<!doctype html>
+<html class="no-js" lang="en">
 
-    createChat({
-        webhookUrl: 'https://drone-store.app.n8n.cloud/webhook/99663231-e386-46ff-8e28-0fa8b4f8a1ee/chat',
-        mode: 'window',
-        showWelcomeScreen: false,
-        initialMessages: ['Hi! 👋 Ask me anything about our drones.'],
-        i18n: {
-            en: {
-                title: 'Drone Store',
-                subtitle: 'We are here to help',
-                footer: '',
-                getStarted: 'New Conversation',
-                inputPlaceholder: 'Type your question...'
+<!--   03:20:39 GMT -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Drophut - Single Product eCommerce Template</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.ico">
+    
+    <!-- CSS 
+    ========================= -->
+   
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" href="./assets/css/plugins.css">
+    
+    <!-- Main Style CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/custom.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css">
+
+</head>
+
+<body>
+    <div id="n8n-chat"></div>
+    <script type="module">
+        import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+
+        createChat({
+            webhookUrl: 'https://drone-store.app.n8n.cloud/webhook/99663231-e386-46ff-8e28-0fa8b4f8a1ee/chat',
+            target: '#n8n-chat',
+            mode: 'window',
+            showWelcomeScreen: false,
+            initialMessages: ['Hi! 👋 Ask me anything about our drones.'],
+            i18n: {
+                en: {
+                    title: 'Drone Store',
+                    subtitle: 'We are here to help',
+                    footer: '',
+                    getStarted: 'New Conversation',
+                    inputPlaceholder: 'Type your question...'
+                }
             }
-        }
-    });
-</script>
+        });
+    </script>
 
+    <!--header area start-->
     <!--Offcanvas menu area start-->
     <div class="off_canvars_overlay">
             
@@ -54,16 +84,24 @@
                         
                         <div class="middel_right_info">
                             <div class="header_wishlist">
-                                <a href="?route=wishlist"><img src="assets/img/user.png" alt="Wishlist"></a>
+                                <a href="?route=wishlist"><img src="assets/img/user.png" alt=""></a>
                             </div>
                             <div class="mini_cart_wrapper">
                                 <a href="?route=cart"><img src="assets/img/shopping-bag.png" alt="Cart"></a>
+                                <span class="cart_quantity"><?= cartItemCount() ?></span>
                                 <!--mini cart-->
-                                <div class="mini_cart">
+                                 <div class="mini_cart">
+                                    <p><?= cartItemCount() ?> item(s) in your cart.</p>
                                     <div class="mini_cart_footer">
-                                        <div class="cart_button"><a href="?route=cart">View cart</a></div>
-                                        <div class="cart_button"><a href="?route=checkout">Checkout</a></div>
+                                       <div class="cart_button">
+                                            <a href="?route=cart">View cart</a>
+                                        </div>
+                                        <div class="cart_button">
+                                            <a href="?route=checkout">Checkout</a>
+                                        </div>
+
                                     </div>
+
                                 </div>
                                 <!--mini cart end-->
                             </div>
@@ -71,10 +109,10 @@
                         <div id="menu" class="text-left ">
                             <ul class="offcanvas_main_menu">
                                 <li class="menu-item-has-children active">
-                                    <a href="#">Home</a>
+                                    <a href="?route=home">Home</a>
                                 </li>
                                 <li class="menu-item-has-children">
-                                    <a href="?route=products">products</a>
+                                    <a href="?route=products">Products</a>
                                 </li>
                                 <li class="menu-item-has-children">
                                     <a href="#">pages </a>
@@ -83,8 +121,11 @@
 										<li><a href="?route=contact">contact</a></li>
 										<li><a href="?route=privacy-policy">privacy policy</a></li>
 										<li><a href="?route=faq">Frequently Questions</a></li>
-										<li><a href="?route=login">login</a></li>
-										<li><a href="?route=register">register</a></li>
+										<?php if (isset($_SESSION['user_id'])): ?>
+                                            <li><a href="?route=my-account">My account</a></li>
+                                            <li><form action="?route=Logout" method="post"><input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>"><button type="submit">Logout (<?= escapeHtml($_SESSION['username']) ?>)</button></form></li>
+                                        <?php else: ?><li><a href="?route=Login">login</a></li><?php endif; ?>
+										<li><a href="?route=Register">register</a></li>
 										<li><a href="?route=forget-password">Forget Password</a></li>
 										<li><a href="?route=404">Error 404</a></li>
 										<li><a href="?route=cart">cart</a></li>
@@ -100,7 +141,7 @@
                                     </ul>
                                 </li>
                                 <li class="menu-item-has-children">
-                                    <a href="?route=login">my account</a>
+                                    <a href="?route=my-account">my account</a>
                                 </li>
                                 <li class="menu-item-has-children">
                                     <a href="?route=contact"> Contact Us</a> 
@@ -154,7 +195,7 @@
                     <div class="row align-items-center">
                         <div class="col-lg-3 col-md-6">
                             <div class="logo">
-                                <a href="?route=index-2"><img src="assets/img/logo/logo.png" alt=""></a>
+                                <a href="?route=home"><img src="assets/img/logo/logo.png" alt=""></a>
                             </div>
                         </div>
                         <div class="col-lg-9 col-md-6">
@@ -169,16 +210,24 @@
                                 </div>
                                 <div class="middel_right_info">
                                     <div class="header_wishlist">
-                                        <a href="?route=wishlist"><img src="assets/img/user.png" alt="Wishlist"></a>
+                                        <a href="#"><img src="assets/img/user.png" alt=""></a>
                                     </div>
                                     <div class="mini_cart_wrapper">
-                                        <a href="?route=cart"><img src="assets/img/shopping-bag.png" alt="Cart"></a>
+                                        <a href="javascript:void(0)"><img src="assets/img/shopping-bag.png" alt=""></a>
+                                        <span class="cart_quantity"><?= cartItemCount() ?></span>
                                         <!--mini cart-->
-                                        <div class="mini_cart">
+                                         <div class="mini_cart">
+                                            <p><?= cartItemCount() ?> item(s) in your cart.</p>
                                             <div class="mini_cart_footer">
-                                                <div class="cart_button"><a href="?route=cart">View cart</a></div>
-                                                <div class="cart_button"><a href="?route=checkout">Checkout</a></div>
+                                               <div class="cart_button">
+                                                    <a href="?route=cart">View cart</a>
+                                                </div>
+                                                <div class="cart_button">
+                                                    <a href="?route=checkout">Checkout</a>
+                                                </div>
+
                                             </div>
+
                                         </div>
                                         <!--mini cart end-->
                                     </div>
@@ -197,7 +246,7 @@
                             <div class="main_menu menu_position"> 
                                 <nav>  
                                     <ul>
-                                        <li><a href="?route=index-2">home</a></li>
+                                        <li><a href="?route=home">home</a></li>
                                         <li><a href="?route=products">Products</a></li>
                                         
                                         <li><a class="active" href="#">pages <i class="fa fa-angle-down"></i></a>
@@ -206,8 +255,11 @@
                                                 <li><a href="?route=contact">contact</a></li>
                                                 <li><a href="?route=privacy-policy">privacy policy</a></li>
                                                 <li><a href="?route=faq">Frequently Questions</a></li>
-                                                <li><a href="?route=login">login</a></li>
-                                                <li><a href="?route=register">register</a></li>
+                                                <?php if (isset($_SESSION['user_id'])): ?>
+                                                    <li><a href="?route=my-account">My account</a></li>
+                                                    <li><form action="?route=Logout" method="post"><input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>"><button type="submit">Logout (<?= escapeHtml($_SESSION['username']) ?>)</button></form></li>
+                                                <?php else: ?><li><a href="?route=Login">login</a></li><?php endif; ?>
+                                                <li><a href="?route=Register">register</a></li>
                                                 <li><a href="?route=forget-password">Forget Password</a></li>
                                                 <li><a href="?route=404">Error 404</a></li>
                                                 <li><a href="?route=cart">cart</a></li>

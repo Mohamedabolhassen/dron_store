@@ -1,50 +1,6 @@
-<!doctype html>
-<html class="no-js" lang="en">
-
-<!-- register.html  03:24:53 GMT -->
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Drophut - Single Product eCommerce Template</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.ico">
-    
-    <!-- CSS 
-    ========================= -->
-   
-
-    <!-- Plugins CSS -->
-    <link rel="stylesheet" href="assets/css/plugins.css">
-    
-    <!-- Main Style CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
-
-</head>
-
-<body>
-
-    <?php require __DIR__ . '/../inc/header.php'; ?>
-    <?php require_once __DIR__ . '/../config/storefront_db.php'; $flash = storefront_take_flash(); ?>
-
-    <!--breadcrumbs area start-->
-    <div class="breadcrumbs_area">
-        <div class="container">   
-            <div class="row">
-                <div class="col-12">
-                    <div class="breadcrumb_content">
-                        <ul>
-                            <li><a href="?route=index-2">home</a></li>
-                            <li>Register</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>         
-    </div>
-    <!--breadcrumbs area end-->
+<?php
+include_once __DIR__ . '/../inc/header.php';
+?>
 
 	<section class="account">
 		<div class="container">
@@ -59,34 +15,36 @@
                                 </div>
                             </div>
                             <div class="col-xl-6 col-lg-6 col-md-6 col-sm-12">
+
+
+
                                 <div class="account-content">
-                                    <?php if ($flash): ?>
-                                        <p role="<?php echo $flash['kind'] === 'error' ? 'alert' : 'status'; ?>">
-                                            <?php echo storefront_escape($flash['message']); ?>
-                                        </p>
-                                    <?php endif; ?>
-                                    <form action="?route=newuser" method="post">
-                                        <input type="hidden" name="csrf_token" value="<?php echo storefront_escape(storefront_csrf_token()); ?>">
+                                    <form action="?route=NewRegister" method="post" >
+                                        <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
+                                        <?php if (!empty($_SESSION['error'])): ?>
+                                            <p style="color:red; margin-bottom:10px;"><?= htmlspecialchars($_SESSION['error']) ?></p>
+                                            <?php unset($_SESSION['error']); ?>
+                                        <?php endif; ?>
                                         <div class="single-acc-field">
                                             <label for="name">Name</label>
-                                            <input type="text" name="name" id="name" maxlength="150" minlength="2" placeholder="Enter Your Name" required>
+                                            <input type="text" name="name" id="name" placeholder="Enter Your Name" required>
                                         </div>
                                         <div class="single-acc-field">
                                             <label for="email">Email</label>
-                                            <input type="email" name="email" id="email" maxlength="150" placeholder="Enter your Email" required>
+                                            <input type="email" name="email" id="email" placeholder="Enter your Email" required>
                                         </div>
                                         <div class="single-acc-field">
                                             <label for="password">Password</label>
-                                            <input type="password" name="password" id="password" minlength="8" maxlength="4096" placeholder="At least 8 characters" required>
+                                            <input type="password" name="password" id="password" placeholder="At least 6 Charecter" minlength="6" required>
                                         </div>
                                         <div class="single-acc-field boxes">
                                             <input type="checkbox" id="checkbox">
                                             <label for="checkbox">I'm not a robot</label>
                                         </div>
                                         <div class="single-acc-field">
-                                            <button name="submit" type="submit">Register now</button>
+                                            <button type="submit">Register now</button>
                                         </div>
-                                        <a href="?route=login">Already account? Login</a>
+                                        <a href="?route=Login">Already account? Login</a>
                                     </form>
                                 </div>
                             </div>
@@ -97,4 +55,115 @@
 		</div>
 	</section>
 
-    <?php require __DIR__ . '/../inc/fotter.php'; ?>
+    <!--footer area start-->
+    <footer class="footer_widgets">
+        <div class="footer_top">
+            <div class="container">
+                <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="widgets_container contact_us">
+                        <div class="footer_logo">
+                            <a href="#"><img src="assets/img/logo/logo.png" alt=""></a>
+                        </div>
+                        <div class="footer_contact">
+                            <p>John draw real poor on call my from. May she mrs furnished discourse extremely. Ask doubt noisy shade guest Lose away off why half led have near bed. At engage simple father of period others except</p>
+                            <p>Ask doubt noisy shade guest Lose away off why half led have near bed. At engage simple father of period others except</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-sm-6">
+                    <div class="widgets_container widget_menu">
+                        <h3>Information</h3>
+                        <div class="footer_menu">
+                            <ul>
+                                <li><a href="?route=about">About Us</a></li>
+                                <li><a href="?route=blog">Delivery Information</a></li>
+                                <li><a href="?route=contact">Privacy Policy</a></li>
+                                <li><a href="?route=services">Terms & Conditions</a></li>
+                                <li><a href="#">Returns</a></li>
+                                <li><a href="#">Gift Certificates</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 col-sm-6">
+                    <div class="widgets_container widget_menu">
+                        <h3>My Account</h3>
+                        <div class="footer_menu">
+                            <ul>
+                                <li><a href="#">My Account</a></li>
+                                <li><a href="#">Order History</a></li>
+                                <li><a href="?route=wishlist">Wish List</a></li>
+                                <li><a href="#">Newsletter</a></li>
+                                <li><a href="#">Affiliate</a></li>
+                                <li><a href="?route=faq">International Orders</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="widgets_container newsletter">
+                        <h3>Follow Us</h3>
+                        <div class="footer_social_link">
+                            <ul>
+                                <li><a class="facebook" href="#" title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                                <li><a class="twitter" href="#" title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                                <li><a class="instagram" href="#" title="instagram"><i class="fa fa-instagram"></i></a></li>
+                                <li><a class="linkedin" href="#" title="linkedin"><i class="fa fa-linkedin"></i></a></li>
+                                <li><a class="rss" href="#" title="rss"><i class="fa fa-rss"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="subscribe_form">
+                            <h3>Join Our Newsletter Now</h3>
+                            <form id="mc-form" class="mc-form footer-newsletter" >
+                                <input id="mc-email" type="email" autocomplete="off" placeholder="Your email address..." />
+                                <button id="mc-submit">Subscribe!</button>
+                            </form>
+                            <!-- mailchimp-alerts Start -->
+                            <div class="mailchimp-alerts text-centre">
+                                <div class="mailchimp-submitting"></div><!-- mailchimp-submitting end -->
+                                <div class="mailchimp-success"></div><!-- mailchimp-success end -->
+                                <div class="mailchimp-error"></div><!-- mailchimp-error end -->
+                            </div><!-- mailchimp-alerts end -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="footer_bottom">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 col-md-6">
+                        <div class="copyright_area">
+                            <p> <a href="templateshub.net">Templates Hub</a></p>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6">
+                        <div class="footer_payment text-right">
+                            <a href="#"><img src="assets/img/icon/payment.png" alt=""></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>   
+    </footer>
+    <!--footer area end-->
+
+
+<!-- JS
+============================================ -->
+
+
+<!-- Plugins JS -->
+<script src="assets/js/plugins.js"></script>
+
+<!-- Main JS -->
+<script src="assets/js/main.js"></script>
+
+
+
+</body>
+
+<!-- register.html  03:24:53 GMT -->
+</html>

@@ -16,6 +16,8 @@ $query = "SELECT  id, productName ,sku,product_category,price,stock FROM  produc
 
 $result = mysqli_query($con , $query) ;
 
+ 
+
 
 $products = mysqli_fetch_all($result, MYSQLI_ASSOC);
 

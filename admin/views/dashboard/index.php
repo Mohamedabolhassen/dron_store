@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -29,6 +30,31 @@
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet">
+  <style>
+    #n8n-chat-card {
+      --chat--color--primary: #4154f1;
+      --chat--color--primary-shade-50: #3547df;
+      --chat--color--primary--shade-100: #2d3fce;
+      --chat--color--secondary: #20b69e;
+      --chat--window--width: 100%;
+      --chat--window--height: 100%;
+      --chat--border-radius: 10px;
+      height: 560px;
+      overflow: hidden;
+    }
+
+    #n8n-chat {
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 575px) {
+      #n8n-chat-card {
+        height: 480px;
+      }
+    }
+  </style>
 
   <!-- =======================================================
   * Template Name: NiceAdmin
@@ -451,9 +477,8 @@
                       <h6>Filter</h6>
                     </li>
 
-                    <li><a class="dropdown-item" href="#">Today</a></li>
-                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                    <li><a class="dropdown-item" href="#">This Year</a></li>
+                    <li><a class="dropdown-item" href="#">Total</a></li>
+                    
                   </ul>
                 </div>
 
@@ -521,9 +546,19 @@
 
               </div>
             </div><!-- End Reports -->
+            <div class="col-12">
+              <section class="card" aria-labelledby="admin-chat-title">
+                <div class="card-body">
+                  <h2 class="card-title" id="admin-chat-title">Drone Store Assistant</h2>
+                  <div id="n8n-chat-card">
+                    <div id="n8n-chat"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
 
             <!-- Recent Sales -->
-            <div class="col-12">
+             <div class="col-12">
               <div class="card recent-sales overflow-auto">
 
                 <div class="filter">
@@ -549,52 +584,89 @@
                         <th scope="col">Customer</th>
                         <th scope="col">Product</th>
                         <th scope="col">Price</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">ِAdreess</th>
+                        <th scope="col">City</th>
                         <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <th scope="row"><a href="#">#2457</a></th>
-                        <td>Brandon Jacob</td>
-                        <td><a href="#" class="text-primary">At praesentium minu</a></td>
-                        <td>$64</td>
-                        <td><span class="badge bg-success">Approved</span></td>
+                      <?php
+                      if (!empty($_SESSION['order_message'])):
+                          $orderMessage = $_SESSION['order_message'];
+                          unset($_SESSION['order_message']);
+                      ?>
+                        <tr>
+                          <td colspan="9">
+                            <div class="alert alert-<?= htmlspecialchars($orderMessage['type'], ENT_QUOTES, 'UTF-8') ?> mb-0">
+                              <?= htmlspecialchars($orderMessage['text'], ENT_QUOTES, 'UTF-8') ?>
+                            </div>
+                          </td>
+                        </tr>
+                      <?php endif; ?>
+                      <?php
+                      $sql = "SELECT o.id AS order_id, o.order_number, o.total_amount, o.order_status,
+                                     sa.recipient_name, sa.phone, sa.city, sa.street_address,
+                                     GROUP_CONCAT(CONCAT(oi.product_name, ' x', oi.quantity)
+                                                  ORDER BY oi.id SEPARATOR ', ') AS products
+                              FROM orders o
+                              JOIN shipping_addresses sa ON sa.id = o.shipping_address_id
+                              JOIN order_items oi ON oi.order_id = o.id
+                              GROUP BY o.id, o.order_number, o.total_amount, o.order_status,
+                                       sa.recipient_name, sa.phone, sa.city, sa.street_address
+                              ORDER BY o.created_at DESC";
+                      $result = mysqli_query($con, $sql);
+                      if (!$result) {
+                          error_log('Unable to load Admin dashboard orders: ' . mysqli_error($con));
+                          $orders = false;
+                      } else {
+                          $orders = mysqli_fetch_all($result, MYSQLI_ASSOC);
+                      }
+                      ?>
+                      <?php if ($orders === false): ?>
+                        <tr><td colspan="9">Orders could not be loaded.</td></tr>
+                      <?php elseif (!$orders): ?>
+                        <tr><td colspan="9">No orders have been placed yet.</td></tr>
+                      <?php else: ?>
+                        <?php foreach ($orders as $order): ?>
+                        <tr>
+                        <th scope="row"><a href="#"><?php echo htmlspecialchars($order['order_number']); ?></a></th>
+                        <td><?php echo htmlspecialchars($order['recipient_name']); ?></td>
+                        <td><a href="#" class="text-primary"><?php echo htmlspecialchars($order['products'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></td>
+                        <td><?php echo htmlspecialchars($order['total_amount'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td ><?php echo htmlspecialchars($order['phone']); ?></td>
+                        <td><?php echo htmlspecialchars($order['street_address']); ?></td>
+                        <td><?php echo htmlspecialchars($order['city']); ?></td>
+                        <td><?= htmlspecialchars(ucfirst($order['order_status']), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="text-nowrap">
+                          <?php if ($order['order_status'] === 'pending'): ?>
+                            <form action="../?route=admin-order-action" method="post" class="d-inline">
+                              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                              <input type="hidden" name="order_id" value="<?= (int) $order['order_id'] ?>">
+                              <input type="hidden" name="order_action" value="approve">
+                              <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                            <form action="../?route=admin-order-action" method="post" class="d-inline" onsubmit="return confirm('Reject this order?');">
+                              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['admin_csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                              <input type="hidden" name="order_id" value="<?= (int) $order['order_id'] ?>">
+                              <input type="hidden" name="order_action" value="reject">
+                              <button type="submit" class="btn btn-outline-danger btn-sm">Reject</button>
+                            </form>
+                          <?php else: ?>
+                            <span class="text-muted">No actions</span>
+                          <?php endif; ?>
+                        </td>
                       </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2147</a></th>
-                        <td>Bridie Kessler</td>
-                        <td><a href="#" class="text-primary">Blanditiis dolor omnis similique</a></td>
-                        <td>$47</td>
-                        <td><span class="badge bg-warning">Pending</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2049</a></th>
-                        <td>Ashleigh Langosh</td>
-                        <td><a href="#" class="text-primary">At recusandae consectetur</a></td>
-                        <td>$147</td>
-                        <td><span class="badge bg-success">Approved</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2644</a></th>
-                        <td>Angus Grady</td>
-                        <td><a href="#" class="text-primar">Ut voluptatem id earum et</a></td>
-                        <td>$67</td>
-                        <td><span class="badge bg-danger">Rejected</span></td>
-                      </tr>
-                      <tr>
-                        <th scope="row"><a href="#">#2644</a></th>
-                        <td>Raheem Lehner</td>
-                        <td><a href="#" class="text-primary">Sunt similique distinctio</a></td>
-                        <td>$165</td>
-                        <td><span class="badge bg-success">Approved</span></td>
-                      </tr>
+                        <?php endforeach; ?>
+                      <?php endif; ?>
                     </tbody>
                   </table>
 
                 </div>
-
               </div>
             </div><!-- End Recent Sales -->
+        
 
             <!-- Top Selling -->
             <div class="col-12">
@@ -634,6 +706,9 @@
                         <td class="fw-bold">124</td>
                         <td>$5,828</td>
                       </tr>
+
+
+                      
                       <tr>
                         <th scope="row"><a href="#"><img src="assets/img/product-2.jpg" alt=""></a></th>
                         <td><a href="#" class="text-primary fw-bold">Exercitationem similique doloremque</a></td>
@@ -987,6 +1062,26 @@
   <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>
   <script src="assets/vendor/tinymce/tinymce.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script type="module">
+    import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+
+    createChat({
+      webhookUrl: 'https://drone-store.app.n8n.cloud/webhook/99663231-e386-46ff-8e28-0fa8b4f8a1ee/chat',
+      target: '#n8n-chat',
+      mode: 'fullscreen',
+      showWelcomeScreen: false,
+      initialMessages: ['Hi! 👋 Ask me anything about our drones.'],
+      i18n: {
+        en: {
+          title: 'Drone Store',
+          subtitle: 'We are here to help',
+          footer: '',
+          getStarted: 'New Conversation',
+          inputPlaceholder: 'Type your question...'
+        }
+      }
+    });
+  </script>
 
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>

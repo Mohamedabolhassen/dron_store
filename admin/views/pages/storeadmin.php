@@ -126,7 +126,7 @@
                   <label  for="productPrice" class="form-label">Price</label>
                   <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input type="number" name="price" class="form-control" id="productPrice" value="<?= htmlspecialchars($productForm['price'] ?? '', ENT_QUOTES, 'UTF-8') ?>" min="0" step="1" placeholder="0" required>
+                    <input type="number" name="price" class="form-control" id="productPrice" value="<?= htmlspecialchars($productForm['price'] ?? '', ENT_QUOTES, 'UTF-8') ?>" min="0" step="0.01" placeholder="0.00" required>
                   </div>
                 </div>
 

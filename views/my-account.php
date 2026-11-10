@@ -1,79 +1,77 @@
 <?php
-require_once __DIR__ . '/../config/storefront_db.php';
-
-$orders = array();
-$ordersError = '';
-$flash = storefront_take_flash();
-try {
-    $orders = storefront_rows(storefront_execute(
-        storefront_db(),
-        'SELECT id, order_number, tracking_code, subtotal, shipping_cost, total_amount, order_status, payment_status, created_at '
-        . 'FROM orders WHERE user_id = ? ORDER BY created_at DESC, id DESC',
-        'i',
-        array((int) $_SESSION['user_id'])
-    ));
-} catch (Throwable $exception) {
-    error_log('Customer orders could not be loaded.');
-    $ordersError = 'Your orders are temporarily unavailable.';
-}
+$userId = getCurrentUserId();
+$user = userFindById($con, $userId);
+$ordersResult = orderAllForUser($con, $userId);
+$accountLoadError = $user === null || !$ordersResult;
+include_once __DIR__ . '/../inc/header.php';
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Account | Drophut</title>
-    <link rel="stylesheet" href="assets/css/plugins.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
-</head>
-<body>
-<?php require __DIR__ . '/../inc/header.php'; ?>
-<main class="container" style="padding: 50px 15px;">
-    <h1>Welcome, <?php echo storefront_escape(isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Customer'); ?></h1>
-    <p>Signed in as <?php echo storefront_escape(isset($_SESSION['user_email']) ? $_SESSION['user_email'] : ''); ?>.</p>
-    <?php if ($flash): ?>
-        <p role="<?php echo $flash['kind'] === 'error' ? 'alert' : 'status'; ?>">
-            <?php echo storefront_escape($flash['message']); ?>
-        </p>
-    <?php endif; ?>
-    <p><a href="?route=products">Continue shopping</a> | <a href="?route=cart">View cart</a> |
-       <a href="?route=wishlist">My wishlist</a></p>
-    <form action="?route=logout" method="post">
-        <input type="hidden" name="csrf_token" value="<?php echo storefront_escape(storefront_csrf_token()); ?>">
-        <button type="submit">Log out</button>
-    </form>
 
-    <h2 style="margin-top: 35px;">My orders</h2>
-    <?php if ($ordersError !== ''): ?>
-        <p role="alert"><?php echo storefront_escape($ordersError); ?></p>
-    <?php elseif (!$orders): ?>
-        <p>You have not placed any orders yet.</p>
-    <?php else: ?>
-        <div class="table-responsive">
-            <table class="table">
-                <thead><tr><th>Order</th><th>Date</th><th>Total</th><th>Status</th><th>Payment</th><th>Tracking</th></tr></thead>
-                <tbody>
-                    <?php foreach ($orders as $order): ?>
-                        <tr>
-                            <td><?php echo storefront_escape($order['order_number']); ?></td>
-                            <td><?php echo storefront_escape($order['created_at']); ?></td>
-                            <td>$<?php echo number_format((float) $order['total_amount'], 2); ?></td>
-                            <td><?php echo storefront_escape(ucfirst($order['order_status'])); ?></td>
-                            <td><?php echo storefront_escape(ucfirst($order['payment_status'])); ?> (COD)</td>
-                            <td>
-                                <form action="?route=tracking" method="post">
-                                    <input type="hidden" name="tracking_code" value="<?php echo storefront_escape($order['tracking_code']); ?>">
-                                    <button type="submit">Track <?php echo storefront_escape($order['tracking_code']); ?></button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php endif; ?>
-</main>
-<?php require __DIR__ . '/../inc/fotter.php'; ?>
-</body>
-</html>
+<div class="breadcrumbs_area">
+    <div class="container">
+        <div class="row"><div class="col-12"><div class="breadcrumb_content">
+            <ul><li><a href="?route=home">Home</a></li><li>My Account</li></ul>
+        </div></div></div>
+    </div>
+</div>
+
+<section class="pt-60 pb-60">
+    <div class="container">
+        <h2>My Account</h2>
+        <?php if (!empty($_SESSION['error'])): ?>
+            <p class="alert alert-danger"><?= escapeHtml($_SESSION['error']) ?></p>
+            <?php unset($_SESSION['error']); ?>
+        <?php endif; ?>
+        <?php if (!empty($_SESSION['success'])): ?>
+            <p class="alert alert-success"><?= escapeHtml($_SESSION['success']) ?></p>
+            <?php unset($_SESSION['success']); ?>
+        <?php endif; ?>
+        <?php if ($accountLoadError || !$user): ?>
+            <p>Your account information is temporarily unavailable. Please try again later.</p>
+        <?php else: ?>
+            <div class="row">
+                <div class="col-lg-5">
+                    <h3>Profile information</h3>
+                    <form action="?route=UpdateProfile" method="post">
+                        <input type="hidden" name="csrf_token" value="<?= escapeHtml(csrfToken()) ?>">
+                        <div class="form_group">
+                            <label for="name">Name</label>
+                            <input id="name" name="name" type="text" maxlength="150"
+                                   value="<?= escapeHtml($user['name']) ?>" required>
+                        </div>
+                        <div class="form_group">
+                            <label for="email">Email</label>
+                            <input id="email" name="email" type="email" maxlength="150"
+                                   value="<?= escapeHtml($user['email']) ?>" required>
+                        </div>
+                        <button class="button" type="submit">Update profile</button>
+                    </form>
+                </div>
+                <div class="col-lg-7">
+                    <h3>My Orders</h3>
+                    <?php if (mysqli_num_rows($ordersResult) === 0): ?>
+                        <p>You have not placed any orders yet.</p>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr></thead>
+                                <tbody>
+                                    <?php while ($order = mysqli_fetch_assoc($ordersResult)): ?>
+                                        <tr>
+                                            <td><?= escapeHtml($order['order_number']) ?></td>
+                                            <td><?= escapeHtml($order['created_at']) ?></td>
+                                            <td><?= escapeHtml($order['order_status']) ?></td>
+                                            <td>$<?= number_format((float) $order['total_amount'], 2) ?></td>
+                                            <td><a href="?route=order-details&amp;id=<?= (int) $order['id'] ?>">Details</a></td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+
+<?php include_once __DIR__ . '/../inc/footer.php'; ?>
