@@ -149,3 +149,22 @@ CREATE TABLE IF NOT EXISTS tracking_logs (
     CONSTRAINT tracking_logs_order_fk
         FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS admin_password_resets (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    admin_id BIGINT UNSIGNED NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY admin_password_resets_admin_unique (admin_id),
+    UNIQUE KEY admin_password_resets_token_unique (token_hash),
+    CONSTRAINT admin_password_resets_admin_fk
+        FOREIGN KEY (admin_id) REFERENCES admins (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    migration VARCHAR(191) NOT NULL,
+    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (migration)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

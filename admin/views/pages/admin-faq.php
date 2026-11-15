@@ -33,16 +33,10 @@ $adminName = htmlspecialchars($_SESSION['admin_name'] ?? 'Admin', ENT_QUOTES, 'U
         <a class="nav-link collapsed" href="../?route=admin"><i class="bi bi-grid"></i><span>Dashboard</span></a>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-forms-elements"><i class="bi bi-journal-text"></i><span>Form Elements</span></a>
+        <a class="nav-link collapsed" href="../?route=admin-forms-elements"><i class="bi bi-box-seam"></i><span>Products</span></a>
       </li>
       <li class="nav-item">
         <a class="nav-link collapsed" href="../?route=admin-users-profile"><i class="bi bi-person"></i><span>Profile</span></a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-pages-login"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-pages-register"><i class="bi bi-card-list"></i><span>Register</span></a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="../?route=admin-pages-faq"><i class="bi bi-question-circle"></i><span>F.A.Q</span></a>
@@ -82,7 +76,7 @@ $adminName = htmlspecialchars($_SESSION['admin_name'] ?? 'Admin', ENT_QUOTES, 'U
                 </button>
               </h3>
               <div id="faqOrders" class="accordion-collapse collapse" aria-labelledby="faqOrdersHeading" data-bs-parent="#adminFaq">
-                <div class="accordion-body">Checkout currently supports cash on delivery only. The site does not collect card or PayPal payments.</div>
+                <div class="accordion-body">Checkout supports cash on delivery. Orders move from pending to processing, shipped, and delivered; pending and processing orders may also be cancelled.</div>
               </div>
             </div>
             <div class="accordion-item">
@@ -92,7 +86,7 @@ $adminName = htmlspecialchars($_SESSION['admin_name'] ?? 'Admin', ENT_QUOTES, 'U
                 </button>
               </h3>
               <div id="faqStock" class="accordion-collapse collapse" aria-labelledby="faqStockHeading" data-bs-parent="#adminFaq">
-                <div class="accordion-body">The storefront checks available stock when items are added and again during checkout. Stock is reduced only after a COD order is successfully saved.</div>
+                <div class="accordion-body">The storefront checks stock when items are added and again during checkout. Stock is reduced only after a COD order is successfully saved, and restored if an Admin cancels a pending or processing order. Marking an order delivered records the cash payment as paid.</div>
               </div>
             </div>
             <div class="accordion-item">

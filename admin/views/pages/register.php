@@ -86,13 +86,19 @@
 
                     <div class="col-12">
                       <label for="yourPassword" class="form-label">Password</label>
-                      <input type="password" name="password" class="form-control" id="yourPassword" minlength="8" required>
+                      <input type="password" name="password" class="form-control" id="yourPassword" minlength="8" maxlength="4096" autocomplete="new-password" required>
                       <div class="invalid-feedback">Use a password with at least 8 characters.</div>
                     </div>
 
                     <div class="col-12">
+                      <label for="confirmPassword" class="form-label">Confirm Password</label>
+                      <input type="password" name="password_confirm" class="form-control" id="confirmPassword" minlength="8" maxlength="4096" autocomplete="new-password" required>
+                      <div class="invalid-feedback">Enter the same password again.</div>
+                    </div>
+
+                    <div class="col-12">
                       <div class="form-check">
-                        <input class="form-check-input" name="terms" type="checkbox" value="" id="acceptTerms" required>
+                        <input class="form-check-input" name="terms" type="checkbox" value="accepted" id="acceptTerms" required>
                         <label class="form-check-label" for="acceptTerms">I agree and accept the terms and conditions</label>
                         <div class="invalid-feedback">You must agree before submitting.</div>
                       </div>

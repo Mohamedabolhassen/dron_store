@@ -37,6 +37,8 @@ $adminRoutes = [
     'admin-pages-error-404' => 'pages/error-404.php',
     'admin-pages-faq' => 'pages/admin-faq.php',
     'admin-pages-login' => 'pages/login.php',
+    'admin-pages-forgot-password' => 'pages/forgot-password.php',
+    'admin-pages-reset-password' => 'pages/reset-password.php',
     'admin-pages-register' => 'pages/register.php',
     'admin-tables-data' => 'tables/data.php',
     'admin-tables-general' => 'tables/general.php',
@@ -96,11 +98,22 @@ if ($route === 'admin-login-submit' || $route === 'admin-register-submit') {
             exit;
         }
 
-        $registrationResult = admin_auth_register(
-            $_POST['name'] ?? '',
-            $_POST['email'] ?? '',
-            $_POST['password'] ?? ''
-        );
+        $password = $_POST['password'] ?? null;
+        $passwordConfirmation = $_POST['password_confirm'] ?? null;
+        if (
+            ($_POST['terms'] ?? null) !== 'accepted' ||
+            !is_string($password) ||
+            !is_string($passwordConfirmation) ||
+            $password !== $passwordConfirmation
+        ) {
+            $registrationResult = 'invalid';
+        } else {
+            $registrationResult = admin_auth_register(
+                $_POST['name'] ?? '',
+                $_POST['email'] ?? '',
+                $password
+            );
+        }
 
         if ($registrationResult !== 'created') {
             $_SESSION['admin_auth_error'] = [
@@ -133,9 +146,114 @@ if ($route === 'admin-login-submit' || $route === 'admin-register-submit') {
     }
 }
 
-$isAdminAuthPage = $route === 'admin-pages-login' || $route === 'admin-pages-register';
+if ($route === 'admin-password-reset-request') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ?route=admin-pages-forgot-password');
+        exit;
+    }
+
+    $csrfToken = $_SESSION['admin_csrf_token'] ?? '';
+    $submittedToken = $_POST['csrf_token'] ?? '';
+    if (!is_string($csrfToken) || !is_string($submittedToken) || !hash_equals($csrfToken, $submittedToken)) {
+        $_SESSION['admin_password_reset_error'] = 'Your session expired. Please try again.';
+    } else {
+        try {
+            $resetResult = admin_auth_send_password_reset($_POST['email'] ?? '');
+            if ($resetResult === 'invalid') {
+                $_SESSION['admin_password_reset_error'] = 'Enter a valid email address.';
+            } elseif ($resetResult === 'mail_unconfigured') {
+                $_SESSION['admin_password_reset_error'] = 'Password-reset email is not configured. Contact the site operator.';
+            } else {
+                $_SESSION['admin_password_reset_success'] =
+                    'If that email belongs to an Admin, password-reset instructions will be sent.';
+            }
+        } catch (RuntimeException $exception) {
+            error_log('Admin password reset request failed: ' . $exception->getMessage());
+            $_SESSION['admin_password_reset_error'] = 'The reset request could not be processed. Please try again later.';
+        } catch (mysqli_sql_exception $exception) {
+            error_log('Admin password reset request failed: ' . $exception->getMessage());
+            $_SESSION['admin_password_reset_error'] = 'The reset request could not be processed. Please try again later.';
+        }
+    }
+
+    header('Location: ?route=admin-pages-forgot-password');
+    exit;
+}
+
+if ($route === 'admin-password-reset-submit') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ?route=admin-pages-forgot-password');
+        exit;
+    }
+
+    $csrfToken = $_SESSION['admin_csrf_token'] ?? '';
+    $submittedToken = $_POST['csrf_token'] ?? '';
+    if (!is_string($csrfToken) || !is_string($submittedToken) || !hash_equals($csrfToken, $submittedToken)) {
+        $_SESSION['admin_password_reset_error'] = 'Your session expired. Please try again.';
+        header('Location: ?route=admin-pages-forgot-password');
+        exit;
+    }
+
+    $token = $_POST['token'] ?? null;
+    $newPassword = $_POST['password'] ?? null;
+    $passwordConfirmation = $_POST['password_confirm'] ?? null;
+    if (
+        !is_string($token) ||
+        !is_string($newPassword) ||
+        !is_string($passwordConfirmation) ||
+        strlen($newPassword) < 8 ||
+        strlen($newPassword) > 4096 ||
+        $newPassword !== $passwordConfirmation
+    ) {
+        $_SESSION['admin_password_reset_error'] = 'Enter matching new passwords with at least 8 characters.';
+        $_SESSION['admin_password_reset_token'] = is_string($token) ? $token : '';
+        header('Location: ?route=admin-pages-reset-password');
+        exit;
+    }
+
+    try {
+        if (!admin_reset_password_with_token($token, $newPassword)) {
+            $_SESSION['admin_password_reset_error'] = 'That reset link is invalid or expired. Request a new one.';
+            header('Location: ?route=admin-pages-forgot-password');
+            exit;
+        }
+
+        unset(
+            $_SESSION['admin_logged_in'],
+            $_SESSION['admin_id'],
+            $_SESSION['admin_name'],
+            $_SESSION['admin_email'],
+            $_SESSION['admin_csrf_token']
+        );
+        session_regenerate_id(true);
+        $_SESSION['admin_auth_success'] = 'Your password was reset. Sign in with your new password.';
+        header('Location: ?route=admin-pages-login');
+        exit;
+    } catch (RuntimeException $exception) {
+        error_log('Admin password reset failed: ' . $exception->getMessage());
+        $_SESSION['admin_password_reset_error'] = 'The password could not be reset. Please try again later.';
+    } catch (mysqli_sql_exception $exception) {
+        error_log('Admin password reset failed: ' . $exception->getMessage());
+        $_SESSION['admin_password_reset_error'] = 'The password could not be reset. Please try again later.';
+    }
+
+    $_SESSION['admin_password_reset_token'] = $token;
+    header('Location: ?route=admin-pages-reset-password');
+    exit;
+}
+
+$adminAuthRoutes = [
+    'admin-pages-login',
+    'admin-pages-register',
+    'admin-pages-forgot-password',
+    'admin-pages-reset-password',
+];
+$isAdminAuthPage = in_array($route, $adminAuthRoutes, true);
 if ($isAdminAuthPage) {
-    if ($adminIsAuthenticated) {
+    if (
+        $adminIsAuthenticated &&
+        in_array($route, ['admin-pages-login', 'admin-pages-register', 'admin-pages-forgot-password'], true)
+    ) {
         header('Location: ?route=admin');
         exit;
     }
@@ -157,6 +275,21 @@ if ($isAdminAuthPage) {
 
     if (empty($_SESSION['admin_csrf_token'])) {
         $_SESSION['admin_csrf_token'] = bin2hex(random_bytes(32));
+    }
+    if ($route === 'admin-pages-reset-password') {
+        header('Referrer-Policy: no-referrer');
+        $passwordResetToken = $_GET['token'] ?? ($_SESSION['admin_password_reset_token'] ?? '');
+        if (!is_string($passwordResetToken)) {
+            $passwordResetToken = '';
+        }
+        unset($_SESSION['admin_password_reset_token']);
+        try {
+            $passwordResetTokenValid = admin_password_reset_token_is_valid($passwordResetToken);
+        } catch (RuntimeException $exception) {
+            error_log('Admin reset-token lookup failed: ' . $exception->getMessage());
+            $passwordResetTokenValid = false;
+            $_SESSION['admin_password_reset_error'] = 'Password reset is temporarily unavailable.';
+        }
     }
 } elseif (!$adminIsAuthenticated) {
     $_SESSION['admin_auth_error'] = 'Please sign in to access the admin area.';
@@ -197,10 +330,10 @@ if ($route === 'admin-order-action') {
     );
     $messages = [
         'updated' => ['success', 'Order status updated.'],
-        'not_pending' => ['warning', 'This order has already been processed.'],
+        'not_allowed' => ['warning', 'That status change is not allowed for this order.'],
         'not_found' => ['danger', 'The selected order was not found.'],
         'invalid_order' => ['danger', 'Invalid order.'],
-        'invalid_action' => ['danger', 'Invalid order action.'],
+        'invalid_action' => ['danger', 'Invalid order status.'],
         'error' => ['danger', 'The order status could not be updated. Please try again.'],
     ];
     $message = $messages[$result] ?? ['danger', 'The order status could not be updated. Please try again.'];
@@ -351,6 +484,19 @@ $productForm = $editingProduct ?? [
     'stock' => '',
     'Description' => '',
 ];
+
+if ($route === 'admin' || $route === 'admin-dashboard') {
+    $dashboardMetrics = admin_dashboard_get_metrics();
+    $dashboardOrders = admin_dashboard_get_recent_orders();
+    $dashboardTopProducts = admin_dashboard_get_top_products();
+    $analyticsPeriod = isset($_GET['period']) && is_scalar($_GET['period'])
+        ? (int) $_GET['period']
+        : 30;
+    if (!in_array($analyticsPeriod, [7, 30, 90], true)) {
+        $analyticsPeriod = 30;
+    }
+    $dashboardAnalytics = admin_dashboard_get_analytics($analyticsPeriod);
+}
 
 $adminView = $adminRoutes[$route] ?? null;
 

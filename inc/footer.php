@@ -46,7 +46,7 @@
                 <div class="row align-items-center">
                     <div class="col-12">
                         <div class="copyright_area">
-                            <p>&copy; <?= date('Y') ?> Drophut</p>
+                            <p>&copy; <?= date('Y') ?> Drophut Drone Store</p>
                         </div>
                     </div>
                 </div>

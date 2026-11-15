@@ -283,25 +283,13 @@
       <li class="nav-item">
         <a class="nav-link collapsed" href="../?route=admin-forms-elements">
           <i class="bi bi-journal-text"></i>
-          <span>Form Elements</span>
+          <span>Products</span>
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link collapsed" href="../?route=admin-users-profile">
           <i class="bi bi-person"></i>
           <span>Profile</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-pages-login">
-          <i class="bi bi-box-arrow-in-right"></i>
-          <span>Login</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-pages-register">
-          <i class="bi bi-card-list"></i>
-          <span>Register</span>
         </a>
       </li>
       <li class="nav-item">

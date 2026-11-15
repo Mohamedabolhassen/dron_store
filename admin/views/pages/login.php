@@ -89,6 +89,10 @@
                       <div class="invalid-feedback">Please enter your password!</div>
                     </div>
 
+                    <div class="col-12 text-end">
+                      <a href="../?route=admin-pages-forgot-password">Forgot password?</a>
+                    </div>
+
                     <div class="col-12">
                       <button class="btn btn-primary w-100" type="submit">Login</button>
                     </div>

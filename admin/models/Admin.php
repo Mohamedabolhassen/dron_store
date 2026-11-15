@@ -152,3 +152,201 @@ function admin_change_password($id, $currentPassword, $newPassword)
 
     return mysqli_affected_rows($connection) === 1;
 }
+
+function admin_issue_password_reset_token($email)
+{
+    $admin = admin_find_by_email($email);
+    if (!$admin) {
+        return false;
+    }
+
+    $connection = admin_db_connection();
+    $adminId = (int) $admin['id'];
+    $cooldown = mysqli_prepare(
+        $connection,
+        'SELECT id FROM admin_password_resets '
+        . 'WHERE admin_id = ? AND created_at >= CURRENT_TIMESTAMP - INTERVAL 60 SECOND LIMIT 1'
+    );
+    if (!$cooldown) {
+        error_log('Unable to prepare admin reset throttling: ' . mysqli_error($connection));
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_bind_param($cooldown, 'i', $adminId);
+    if (!mysqli_stmt_execute($cooldown)) {
+        error_log('Unable to check admin reset throttling: ' . mysqli_stmt_error($cooldown));
+        mysqli_stmt_close($cooldown);
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_store_result($cooldown);
+    $isCoolingDown = mysqli_stmt_num_rows($cooldown) > 0;
+    mysqli_stmt_close($cooldown);
+    if ($isCoolingDown) {
+        return false;
+    }
+
+    $token = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $token);
+    $expiresAt = gmdate('Y-m-d H:i:s', time() + 3600);
+    $statement = mysqli_prepare(
+        $connection,
+        'INSERT INTO admin_password_resets (admin_id, token_hash, expires_at) VALUES (?, ?, ?) '
+        . 'ON DUPLICATE KEY UPDATE token_hash = VALUES(token_hash), '
+        . 'expires_at = VALUES(expires_at), created_at = CURRENT_TIMESTAMP'
+    );
+    if (!$statement) {
+        error_log('Unable to prepare admin password reset: ' . mysqli_error($connection));
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_bind_param($statement, 'iss', $adminId, $tokenHash, $expiresAt);
+    if (!mysqli_stmt_execute($statement)) {
+        error_log('Unable to create admin password reset: ' . mysqli_stmt_error($statement));
+        mysqli_stmt_close($statement);
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_close($statement);
+    return $token;
+}
+
+function admin_password_reset_token_is_valid($token)
+{
+    if (!is_string($token) || !preg_match('/\A[a-f0-9]{64}\z/', $token)) {
+        return false;
+    }
+
+    $connection = admin_db_connection();
+    $tokenHash = hash('sha256', $token);
+    $statement = mysqli_prepare(
+        $connection,
+        'SELECT id FROM admin_password_resets '
+        . 'WHERE token_hash = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
+    );
+    if (!$statement) {
+        error_log('Unable to prepare admin reset-token lookup: ' . mysqli_error($connection));
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_bind_param($statement, 's', $tokenHash);
+    if (!mysqli_stmt_execute($statement)) {
+        error_log('Unable to check admin reset token: ' . mysqli_stmt_error($statement));
+        mysqli_stmt_close($statement);
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_store_result($statement);
+    $isValid = mysqli_stmt_num_rows($statement) === 1;
+    mysqli_stmt_close($statement);
+    return $isValid;
+}
+
+function admin_delete_password_reset_token($token)
+{
+    if (!is_string($token) || !preg_match('/\A[a-f0-9]{64}\z/', $token)) {
+        return false;
+    }
+
+    $connection = admin_db_connection();
+    $tokenHash = hash('sha256', $token);
+    $statement = mysqli_prepare(
+        $connection,
+        'DELETE FROM admin_password_resets WHERE token_hash = ?'
+    );
+    if (!$statement) {
+        error_log('Unable to prepare admin reset-token deletion: ' . mysqli_error($connection));
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    mysqli_stmt_bind_param($statement, 's', $tokenHash);
+    if (!mysqli_stmt_execute($statement)) {
+        error_log('Unable to delete admin reset token: ' . mysqli_stmt_error($statement));
+        mysqli_stmt_close($statement);
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    $deleted = mysqli_stmt_affected_rows($statement) === 1;
+    mysqli_stmt_close($statement);
+    return $deleted;
+}
+
+function admin_reset_password_with_token($token, $newPassword)
+{
+    if (!is_string($token) || !preg_match('/\A[a-f0-9]{64}\z/', $token)) {
+        return false;
+    }
+
+    $connection = admin_db_connection();
+    $passwordColumn = admin_password_column();
+    $tokenHash = hash('sha256', $token);
+
+    if (!mysqli_begin_transaction($connection)) {
+        error_log('Unable to begin admin password reset: ' . mysqli_error($connection));
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+
+    try {
+        $lookup = mysqli_prepare(
+            $connection,
+            'SELECT admin_id FROM admin_password_resets '
+            . 'WHERE token_hash = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1 FOR UPDATE'
+        );
+        if (!$lookup) {
+            throw new RuntimeException('Unable to prepare reset-token lookup: ' . mysqli_error($connection));
+        }
+
+        mysqli_stmt_bind_param($lookup, 's', $tokenHash);
+        if (!mysqli_stmt_execute($lookup)) {
+            throw new RuntimeException('Unable to read reset token: ' . mysqli_stmt_error($lookup));
+        }
+
+        mysqli_stmt_bind_result($lookup, $adminId);
+        $found = mysqli_stmt_fetch($lookup);
+        mysqli_stmt_close($lookup);
+
+        if (!$found) {
+            mysqli_rollback($connection);
+            return false;
+        }
+
+        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $update = mysqli_prepare(
+            $connection,
+            "UPDATE admins SET `$passwordColumn` = ? WHERE id = ?"
+        );
+        if (!$update) {
+            throw new RuntimeException('Unable to prepare password update: ' . mysqli_error($connection));
+        }
+
+        mysqli_stmt_bind_param($update, 'si', $passwordHash, $adminId);
+        if (!mysqli_stmt_execute($update) || mysqli_stmt_affected_rows($update) !== 1) {
+            throw new RuntimeException('Unable to update admin password: ' . mysqli_stmt_error($update));
+        }
+        mysqli_stmt_close($update);
+
+        $delete = mysqli_prepare(
+            $connection,
+            'DELETE FROM admin_password_resets WHERE token_hash = ?'
+        );
+        if (!$delete) {
+            throw new RuntimeException('Unable to prepare reset-token cleanup: ' . mysqli_error($connection));
+        }
+
+        mysqli_stmt_bind_param($delete, 's', $tokenHash);
+        if (!mysqli_stmt_execute($delete) || mysqli_stmt_affected_rows($delete) !== 1) {
+            throw new RuntimeException('Unable to consume reset token: ' . mysqli_stmt_error($delete));
+        }
+        mysqli_stmt_close($delete);
+
+        if (!mysqli_commit($connection)) {
+            throw new RuntimeException('Unable to commit admin password reset: ' . mysqli_error($connection));
+        }
+
+        return true;
+    } catch (Throwable $exception) {
+        mysqli_rollback($connection);
+        error_log('Admin password reset failed: ' . $exception->getMessage());
+        throw new RuntimeException('Password reset is temporarily unavailable.');
+    }
+}

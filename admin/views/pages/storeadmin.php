@@ -46,18 +46,6 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-pages-login">
-          <i class="bi bi-box-arrow-in-right"></i>
-          <span>Login</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="../?route=admin-pages-register">
-          <i class="bi bi-card-list"></i>
-          <span>Register</span>
-        </a>
-      </li>
-      <li class="nav-item">
         <a class="nav-link collapsed" href="../?route=admin-pages-faq">
           <i class="bi bi-question-circle"></i>
           <span>F.A.Q</span>
@@ -173,14 +161,13 @@
                 <h5 class="card-title mb-0">Product List</h5>
                 <div class="input-group" style="max-width: 280px;">
                   <span class="input-group-text"><i class="bi bi-search"></i></span>
-                  <input type="search" class="form-control" aria-label="Search products" placeholder="Search products">
+                  <input type="search" id="product-search" class="form-control" aria-label="Search products"
+                         aria-controls="admin-products" placeholder="Search products">
                 </div>
               </div>
 
-
-
               <div class="table-responsive mt-3">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="admin-products">
                   <thead>
                     <tr>
                       <th scope="col">Product</th>
@@ -192,6 +179,9 @@
                     </tr>
                   </thead>
                   <tbody>
+                    <?php if (!$products): ?>
+                    <tr><td colspan="6">No products have been added yet.</td></tr>
+                    <?php else: ?>
                     <?php foreach ($products as $row): ?>
                     <tr>
                       <td>
@@ -203,7 +193,8 @@
                       <td><?= htmlspecialchars($row['sku'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                       <td><?= htmlspecialchars($row['product_category'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                       <td><?= htmlspecialchars($row['price'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
-                      <td><span class="badge bg-success"><?= htmlspecialchars($row['stock'] ?? '', ENT_QUOTES, 'UTF-8') ?></span></td>
+                      <td><span class="badge bg-<?= (int) ($row['stock'] ?? 0) > 0 ? 'success' : 'danger' ?>">
+                        <?= htmlspecialchars($row['stock'] ?? '', ENT_QUOTES, 'UTF-8') ?></span></td>
                       <td class="text-end text-nowrap">
                         <a href="../?route=admin-product-edit&amp;id=<?= rawurlencode((string) ($row['id'] ?? '')) ?>" class="btn btn-outline-primary btn-sm" aria-label="Edit <?= htmlspecialchars($row['productName'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                           <i class="bi bi-pencil"></i>
@@ -218,25 +209,12 @@
                       </td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php endif; ?>
                   </tbody>
                 </table>
               </div>
 
-              <div class="d-flex justify-content-end mt-3">
-                <nav aria-label="Product list pages">
-                  <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled" aria-disabled="true">
-                      <span class="page-link">Previous</span>
-                    </li>
-                    <li class="page-item active" aria-current="page">
-                      <span class="page-link">1</span>
-                    </li>
-                    <li class="page-item disabled" aria-disabled="true">
-                      <span class="page-link">Next</span>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
+              <p id="product-search-summary" class="text-muted small mt-3 mb-0" aria-live="polite"></p>
             </div>
           </div>
         </div>
@@ -249,6 +227,28 @@
   </a>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/main.js"></script>
+  <script>
+    const productSearch = document.getElementById('product-search');
+    const productRows = Array.from(document.querySelectorAll('#admin-products tbody tr'))
+      .filter((row) => row.cells.length > 1);
+    const productSummary = document.getElementById('product-search-summary');
+
+    function filterProducts() {
+      const query = productSearch.value.trim().toLocaleLowerCase();
+      let visible = 0;
+      productRows.forEach((row) => {
+        const matches = row.textContent.toLocaleLowerCase().includes(query);
+        row.hidden = !matches;
+        if (matches) visible += 1;
+      });
+      productSummary.textContent = query
+        ? `${visible} matching product${visible === 1 ? '' : 's'}`
+        : `${visible} product${visible === 1 ? '' : 's'}`;
+    }
+
+    productSearch.addEventListener('input', filterProducts);
+    filterProducts();
+  </script>
 </body>
 
 </html>

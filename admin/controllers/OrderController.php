@@ -8,13 +8,10 @@ function admin_order_controller_update_status($id, $action)
         return 'invalid_order';
     }
 
-    $statuses = [
-        'approve' => 'processing',
-        'reject' => 'cancelled',
-    ];
-    if (!is_string($action) || !isset($statuses[$action])) {
+    $statuses = ['processing', 'shipped', 'delivered', 'cancelled'];
+    if (!is_string($action) || !in_array($action, $statuses, true)) {
         return 'invalid_action';
     }
 
-    return admin_order_update_pending_status((int) $id, $statuses[$action]);
+    return admin_order_update_status((int) $id, $action);
 }

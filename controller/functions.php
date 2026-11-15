@@ -42,18 +42,18 @@ function productImageUrl($imageUrl)
 {
     $imageUrl = trim((string) $imageUrl);
     if ($imageUrl === '') {
-        return 'assets/img/product/details-1.jpg';
+        return 'assets/img/product/store-camera-drone.webp';
     }
 
     if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
         $scheme = strtolower((string) parse_url($imageUrl, PHP_URL_SCHEME));
         return in_array($scheme, ['http', 'https'], true)
             ? $imageUrl
-            : 'assets/img/product/details-1.jpg';
+            : 'assets/img/product/store-camera-drone.webp';
     }
 
     if (strpos($imageUrl, '..') !== false || !preg_match('/^[A-Za-z0-9_\\.\\/-]+$/', $imageUrl)) {
-        return 'assets/img/product/details-1.jpg';
+        return 'assets/img/product/store-camera-drone.webp';
     }
 
     return $imageUrl;

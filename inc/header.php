@@ -5,8 +5,8 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Drophut - Single Product eCommerce Template</title>
-    <meta name="description" content="">
+    <title>Drophut Drone Store | Drones and Flight Gear</title>
+    <meta name="description" content="Browse camera drones, FPV flyers, and flight gear. Explore current products, stock, and cash-on-delivery checkout.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.ico">
@@ -21,6 +21,7 @@
     <!-- Main Style CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/custom.css">
+    <link rel="stylesheet" href="assets/css/storefront.css?v=3">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css">
 
 </head>
@@ -65,7 +66,7 @@
                               <a href="javascript:void(0)"><i class="ion-android-close"></i></a>  
                         </div>
                         <div class="support_info">
-                            <p>Any Enquiry: <a href="tel:">+56985475235</a></p>
+                            <p>Questions? <a href="?route=contact">Contact us</a></p>
                         </div>
                         <div class="top_right text-right">
                             <ul>
@@ -74,10 +75,11 @@
                             </ul>
                         </div> 
                         <div class="search_container">
-                           <form action="#">
+                           <form action="index.php" method="get" role="search">
+                                <input type="hidden" name="route" value="products">
                                 <div class="search_box">
-                                    <input placeholder="Search product..." type="text">
-                                    <button type="submit">Search</button> 
+                                    <input name="q" placeholder="Search products..." type="search" aria-label="Search products">
+                                    <button type="submit">Search</button>
                                 </div>
                             </form>
                         </div> 
@@ -115,7 +117,7 @@
                                     <a href="?route=products">Products</a>
                                 </li>
                                 <li class="menu-item-has-children">
-                                    <a href="#">pages </a>
+                                    <a href="?route=about">Explore the store</a>
                                     <ul class="sub-menu">
                                         <li><a href="?route=about">About Us</a></li>
 										<li><a href="?route=contact">contact</a></li>
@@ -134,7 +136,7 @@
                                     </ul>
                                 </li>
                                 <li class="menu-item-has-children">
-                                    <a href="#">blog</a>
+                                    <a href="?route=blog">Field notes</a>
                                     <ul class="sub-menu">
                                         <li><a href="?route=blog">blog</a></li>
                                         <li><a href="?route=blog-details">blog details</a></li>
@@ -150,14 +152,7 @@
                         </div>
 
                         <div class="Offcanvas_footer">
-                            <span><a href="#"><i class="fa fa-envelope-o"></i> info@drophunt.com</a></span>
-                            <ul>
-                                <li class="facebook"><a href="#"><i class="fa fa-facebook"></i></a></li>
-                                <li class="twitter"><a href="#"><i class="fa fa-twitter"></i></a></li>
-                                <li class="pinterest"><a href="#"><i class="fa fa-pinterest-p"></i></a></li>
-                                <li class="google-plus"><a href="#"><i class="fa fa-google-plus"></i></a></li>
-                                <li class="linkedin"><a href="#"><i class="fa fa-linkedin"></i></a></li>
-                            </ul>
+                            <span><a href="?route=faq">Need help? Browse the store FAQ</a></span>
                         </div>
                     </div>
                 </div>
@@ -174,7 +169,7 @@
                     <div class="row align-items-center">
                         <div class="col-lg-6 col-md-6">
                             <div class="support_info">
-                                <p>Email: <a href="mailto:">support@drophunt.com</a></p>
+                                <p><a href="?route=contact">Contact the store</a></p>
                             </div>
                         </div>
                         <div class="col-lg-6 col-md-6">
@@ -201,19 +196,20 @@
                         <div class="col-lg-9 col-md-6">
                             <div class="middel_right">
                                 <div class="search_container">
-                                   <form action="#">
+                                   <form action="index.php" method="get" role="search">
+                                        <input type="hidden" name="route" value="products">
                                         <div class="search_box">
-                                            <input placeholder="Search product..." type="text">
-                                            <button type="submit">Search</button> 
+                                            <input name="q" placeholder="Search products..." type="search" aria-label="Search products">
+                                            <button type="submit">Search</button>
                                         </div>
                                     </form>
                                 </div>
                                 <div class="middel_right_info">
                                     <div class="header_wishlist">
-                                        <a href="#"><img src="assets/img/user.png" alt=""></a>
+                                        <a href="?route=wishlist" aria-label="View wishlist"><img src="assets/img/user.png" alt="Wishlist"></a>
                                     </div>
                                     <div class="mini_cart_wrapper">
-                                        <a href="javascript:void(0)"><img src="assets/img/shopping-bag.png" alt=""></a>
+                                        <a href="?route=cart" aria-label="View cart"><img src="assets/img/shopping-bag.png" alt="Cart"></a>
                                         <span class="cart_quantity"><?= cartItemCount() ?></span>
                                         <!--mini cart-->
                                          <div class="mini_cart">
@@ -249,7 +245,7 @@
                                         <li><a href="?route=home">home</a></li>
                                         <li><a href="?route=products">Products</a></li>
                                         
-                                        <li><a class="active" href="#">pages <i class="fa fa-angle-down"></i></a>
+                                        <li><a class="active" href="?route=about">About the store <i class="fa fa-angle-down"></i></a>
                                             <ul class="sub_menu pages">
                                                 <li><a href="?route=about">About Us</a></li>
                                                 <li><a href="?route=contact">contact</a></li>
