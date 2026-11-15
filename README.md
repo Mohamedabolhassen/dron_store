@@ -57,7 +57,7 @@ The script adds eight drone and accessory products, twelve fictional customer pr
 ### First Admin account
 
 1. Open [http://localhost/dron-store2/?route=admin-pages-login](http://localhost/dron-store2/?route=admin-pages-login).
-2. _ account : admmin@gmail.com   pw:123 
+2. _ account : admin@gmail.com   pw:123 
 3. If the `admins` table has no account, use the registration link to create the first Admin.
 4. After the first Admin is registered, public Admin registration closes. Sign in with that account to manage products and orders.
 
